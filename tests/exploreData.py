@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import pylab as P
 import matplotlib as plt
+plt.style.use('ggplot')
 from datetime import datetime
 
 
@@ -62,6 +63,25 @@ P.show()
 # Merge price and generation data to check correlations
 price_merge=pd.merge(genES, pricePT)
 
-price_merge[(price_merge['date']>='2015-01-01 00:00:00') &
-            (price_merge['date']<'2015-01-02 00:00:00')].\
-    plot(x='date')
+idx=(price_merge['date']>='2015-01-01 00:00:00') & \
+    (price_merge['date']<'2015-01-02 00:00:00')
+price_merge[idx].plot(x='date')
+
+
+#TODO: Trying to figure out how to get subplots working!!!!
+#fig, axes = plt.subplots(nrows=2, ncols=1)
+plt.subplots(2,1)
+price_merge[idx][['date', 'price']].plot(x='date', ax=axes(0,0))
+price_merge[idx].drop('price', axis=1).plot(x='date', ax=axes(1,0))
+
+
+
+
+# P.subplot(2, 1, 1)
+# P.plot(x=price_merge[idx]['date'], y=price_merge[idx]['price'])
+# P.title("Price and demand (MW)")
+# P.ylabel("Price")
+#
+# P.subplot(2, 1, 2)
+# P.plot(x=price_merge[idx]['date'], y=price_merge[idx].drop(['date','price'], axis=1))
+# P.ylabel("Demand (MW)")
