@@ -6,7 +6,7 @@ __author__ = "Cameron Roach"
 import pandas as pd
 import numpy as np
 import pylab as P
-import matplotlib as plt
+import matplotlib.pyplot as plt
 plt.style.use('ggplot')
 from datetime import datetime
 
@@ -19,7 +19,15 @@ genPT = pd.read_csv('../data/HistData/gen_PT.csv', header=0)
 pricePT = pd.read_csv('../data/HistData/price_PT.csv', header=0)
 pricePT.rename(columns = {'value':'price'}, inplace=True)
 weather = pd.read_csv('../data/HistWeather/weather_hist.csv')
+weather.rename(columns = {'prediction_date':'date'}, inplace=True)
 
+
+
+# Sort out date.time types. Slow. Probably a better (but less user-friendly) way.
+genES['date'] = genES['date'].apply(pd.to_datetime)
+genPT['date'] = genPT['date'].apply(pd.to_datetime)
+pricePT['date'] = pricePT['date'].apply(pd.to_datetime)
+weather['date'] = weather['date'].apply(pd.to_datetime)
 
 
 
@@ -70,12 +78,10 @@ price_merge[idx].plot(x='date')
 
 #TODO: Trying to figure out how to get subplots working!!!!
 #fig, axes = plt.subplots(nrows=2, ncols=1)
-plt.subplots(2,1)
-price_merge[idx][['date', 'price']].plot(x='date', ax=axes(0,0))
-price_merge[idx].drop('price', axis=1).plot(x='date', ax=axes(1,0))
-
-
-
+# plt.subplots(2,1)
+# price_merge[idx][['date', 'price']].plot(x='date', ax=axes(0,0))
+# price_merge[idx].drop('price', axis=1).plot(x='date', ax=axes(1,0))
+#
 
 # P.subplot(2, 1, 1)
 # P.plot(x=price_merge[idx]['date'], y=price_merge[idx]['price'])
@@ -85,3 +91,27 @@ price_merge[idx].drop('price', axis=1).plot(x='date', ax=axes(1,0))
 # P.subplot(2, 1, 2)
 # P.plot(x=price_merge[idx]['date'], y=price_merge[idx].drop(['date','price'], axis=1))
 # P.ylabel("Demand (MW)")
+
+
+
+# Scatterplots of price and temperature
+weatherPrice = pd.merge(weather, pricePT)
+# plt.scatter(x=weatherPrice['temperature'], y=weatherPrice['price'],
+#             c=weatherPrice['point'])
+
+for i, group in weatherPrice.groupby('point'):
+    fig = plt.figure()
+    ax = plt.scatter(x=group['temperature'], y=group['price'])
+    fig.suptitle(str("Weather station %d" % i))
+    #ax = group.plot(x='temperature', y='price', title=str(i)) # line plot
+    #ax.set_title("asdf")
+
+
+# Better attempt
+for i, group in weatherPrice.groupby('point'):
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    ax.scatter(x=group['temperature'], y=group['price'])
+    ax.set_title(str("Weather station %d" % i))
+    ax.set_xlabel("Temperature")
+    ax.set_ylabel("Price $/MWh")
