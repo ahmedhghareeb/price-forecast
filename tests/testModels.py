@@ -62,7 +62,8 @@ price = price.set_index('date').resample("60 min").reset_index()
 price = (price.assign(Year = price['date'].dt.year)
          .assign(Month = price['date'].dt.month)
          .assign(Hour = price['date'].dt.hour)
-         .assign(DoW = price['date'].dt.dayofweek)) #Monday=0
+         .assign(DoW = price['date'].dt.dayofweek) #Monday=0
+         .assign(DoY = price['date'].dt.dayofyear))
 # TODO: Instead of >=, should really use in. Returns error if using in [5,6]
 price = (price.assign(Weekend = np.where(price['DoW'] >= 5, "Weekend",
                                     "Weekday")))
@@ -96,12 +97,22 @@ ax = price.plot(x='date', y=['temperature_Portugal', 'temperature_Spain'],
 
 ax = price.plot(x='date', y='price', title="Electricity price in Portugal")
 
-
-# TODO: Do histograms/boxplots of price by each driver variable
+#This is one way of splitting up the boxplots
+ax = price[["DoW", "price"]].groupby("DoW").boxplot()
+#But this way is better
+# TODO: pivot introduces NaNs because it treats the row number as an index. Figure out a way to get it to ignore that so that there aren't so many NaNs!
+ax = price[["DoW", "price"]].pivot(columns="DoW").boxplot()
+ax.set_title("Price boxplots for each day of the week (0 = Monday)")
 
 #endregion
 
 
 #region Fit models
-# TODO
+
+# Remove NaNs and unwanted columns for modelling
+price = price.dropna()
+price = price.drop(['Year','DoW','DoY'], axis=1)
+price.dtypes
+
+
 #endregion
