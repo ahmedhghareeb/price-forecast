@@ -9,6 +9,8 @@ import pandas as pd
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestRegressor
+
 plt.style.use('ggplot')
 
 os.chdir("/Users/cameronroach/Documents/PyCharm Projects/PriceForecast/tests")
@@ -31,6 +33,7 @@ weather['date'] = weather['date'].apply(pd.to_datetime)
 # temperatures, wind speeds, etc.
 weatherMean = pd.merge(weather, locations)
 #weather.query("Country=='Spain'")
+# TODO: calculate the difference between the two country averages and maybe avg countries to get one average temp value and one difference between countries value. Only do this if there is strong correlation between the two country average temperatures - CHECK!
 weatherMean = (
     #weatherMean.groupby(['date', 'Country'], as_index=False)
     weatherMean.groupby(['date', 'Country'])
@@ -109,10 +112,36 @@ ax.set_title("Price boxplots for each day of the week (0 = Monday)")
 
 #region Fit models
 
-# Remove NaNs and unwanted columns for modelling
-price = price.dropna()
-price = price.drop(['Year','DoW','DoY'], axis=1)
-price.dtypes
+# Remove NaNs and unwanted columns for modelling and put into training data
+# dataframe
+# TODO: could try a better method for dealing with NaNs, e.g., fill in with the median, but ignoring for the moment. See: https://www.kaggle.com/c/titanic/details/getting-started-with-python-ii
+train_data_pd = price.dropna() #df used later when comparing predicted values
+train_data = train_data_pd.drop(['Year', 'DoW', 'DoY', 'date'], axis=1)
 
+#sklearn needs a numpy.array which in turn needs all numeric data. Hence,
+# need to convert the Weekend column to a numeric
+train_data["Weekend"] = train_data["Weekend"]\
+    .map( {'Weekend': 1, 'Weekday': 0} )\
+    .astype(int)
+train_data = train_data.values #numpy.array
+
+# Fit a model!!!! :D :D :D
+forest = RandomForestRegressor(n_estimators = 100)
+# Driver variables in columns 1 onwards. Response variable in colum zero.
+# 0:: means all rows, but could also have just used :
+forest = forest.fit(train_data[0::,1::],train_data[0::,0])
+print forest.feature_importances_
+
+# TODO: Put together linear regression model
+
+
+
+
+# Compare predictions against actuals
+# TODO: This throws a warning. Not the right way to assign numpy.ndarray to pandas data frame.
+train_data_pd["price_rf"] = forest.predict(train_data[0::,1::])
+
+train_data_pd.plot(x="date", y=["price", "price_rf"],
+                   title="Price predictions compared to actuals")
 
 #endregion
