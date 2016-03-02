@@ -93,6 +93,12 @@ ax = price.plot(x='date', y=['temperature_Portugal', 'temperature_Spain'],
            subplots=True, sharex=True, title="Average temperatures in Spain "
                                              "and Portugal",
                 color="blue")
+
+ax = price.plot(x='date', y='price', title="Electricity price in Portugal")
+
+
+# TODO: Do histograms/boxplots of price by each driver variable
+
 #endregion
 
 
