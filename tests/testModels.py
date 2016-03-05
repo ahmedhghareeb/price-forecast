@@ -105,6 +105,7 @@ ax = price[["DoW", "price"]].groupby("DoW").boxplot()
 #But this way is better
 # TODO: pivot introduces NaNs because it treats the row number as an index. Figure out a way to get it to ignore that so that there aren't so many NaNs!
 ax = price[["DoW", "price"]].pivot(columns="DoW").boxplot()
+ax = price[["Hour", "price"]].pivot(columns="Hour").boxplot()
 
 #endregion
 
