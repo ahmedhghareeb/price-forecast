@@ -147,37 +147,50 @@ ax = price[["Date", "Hour", "price"]].pivot(
 all_data = price.dropna().copy() #copy needed or get SettingWithCopyWarning
 all_data["Weekend"] = all_data["Weekend"]\
     .map( {"Weekend": 1, "Weekday": 0} )\
-    .astype(int)
-x_train, x_test, y_train, y_test = cross_validation.train_test_split(
-        all_data.drop(["Year", "DoW", "DoY", "ts", "Date", "price"], axis=1),
-        all_data["price"],
-        test_size=0.4, random_state=0)
-x_train = x_train.values
-x_test = x_test.values
-y_train = y_train.values
-y_test = y_test.values
+    .astype(int) #numpy and sklearn need numerics
+rndm_idx = np.random.rand(len(all_data)) < 0.8
+train_data = all_data[rndm_idx].copy()
+test_data = all_data[~rndm_idx].copy()
 
-#sklearn needs a numpy.array which in turn needs all numeric data. Hence,
-# need to convert the Weekend column to a numeric
+x_train = train_data.drop(["Year", "DoW", "DoY", "ts", "Date", "price"],
+                          axis=1)
+x_test = test_data.drop(["Year", "DoW", "DoY", "ts", "Date", "price"],
+                          axis=1)
+y_train = train_data["price"]
 
-
-# Fit a model!!!! :D :D :D
+# Fit random forest
 forest = RandomForestRegressor(n_estimators = 100)
-# Driver variables in columns 1 onwards. Response variable in colum zero.
-# 0:: means all rows, but could also have just used :
-forest = forest.fit(x_train, y_train)
-print forest.feature_importances_
+forest_fit = forest.fit(x_train, y_train)
+# TODO: setup k-fold cross validation
+scores = cross_validation.cross_val_score(forest, x_train, y_train, cv=5)
 
-# TODO: Put together linear regression model
+print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 1.96))
+print forest_fit.feature_importances_
+
+# TODO: Put together linear regression model and baseline models
 # Fit a regression model
 
 
 
 # Compare predictions against actuals
-# TODO: This throws a warning. Not the right way to assign numpy.ndarray to pandas data frame.
-all_data["price_rf"] = forest.predict(train_data[0::,1::])
+test_data["price_rf"] = forest_fit.predict(x_test)
 
-all_data.plot(x="ts", y=["price", "price_rf"],
+test_data.plot(x="ts", y=["price", "price_rf"],
                    title="Price predictions compared to actuals")
+
+#endregion
+
+
+
+#region Evaluation metrics
+test_data["ae_rf"] = abs(test_data["price"]-test_data["price_rf"])
+test_data["ape_rf"] = test_data["ae_rf"]/test_data["price"]
+test_data.plot(x="ts", y="ae_rf")
+test_data.plot(x="ts", y="ape_rf")
+plt.scatter(x=test_data["temperature_Portugal"],
+            y=test_data["ae_rf"])
+plt.scatter(x=test_data["temperature_Portugal"],
+            y=test_data["ape_rf"])
+
 
 #endregion
