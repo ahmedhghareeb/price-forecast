@@ -71,7 +71,7 @@ price = (price.assign(Year = price["ts"].dt.year)
          .assign(Hour = price["ts"].dt.hour)
          .assign(DoW = price["ts"].dt.dayofweek) #Monday=0
          .assign(DoY = price["ts"].dt.dayofyear)
-         .assign(Date = price["ts"].date()))
+         .assign(Date = price["ts"].dt.date))
 # TODO: Instead of >=, should really use in. Returns error if using in [5,6]
 price = (price.assign(Weekend = np.where(price["DoW"] >= 5, "Weekend",
                                     "Weekday")))
