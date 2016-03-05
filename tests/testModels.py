@@ -75,6 +75,24 @@ price = (price.assign(Year = price["ts"].dt.year)
 # TODO: Instead of >=, should really use in. Returns error if using in [5,6]
 price = (price.assign(Weekend = np.where(price["DoW"] >= 5, "Weekend",
                                     "Weekday")))
+
+# Add hourly lags for weather variables
+price = (price
+         .assign(temperature_Portugal_lag1 = price[
+    "temperature_Portugal"].shift(1))
+         .assign(temperature_Portugal_lag2 = price[
+    "temperature_Portugal"].shift(2))
+         .assign(temperature_Portugal_lag3 = price[
+    "temperature_Portugal"].shift(3))
+         .assign(temperature_Spain_lag1 = price[
+    "temperature_Spain"].shift(1))
+         .assign(temperature_Spain_lag2 = price[
+    "temperature_Spain"].shift(2))
+         .assign(temperature_Spain_lag3 = price[
+    "temperature_Spain"].shift(3)))
+
+# TODO: Add lags for previous day. Same time yesterday or avg temp?
+
 #endregion
 
 
@@ -139,7 +157,7 @@ forest = forest.fit(train_data[0::,1::],train_data[0::,0])
 print forest.feature_importances_
 
 # TODO: Put together linear regression model
-
+# Fit a regression model
 
 
 
