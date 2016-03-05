@@ -110,7 +110,8 @@ ax = price.plot(x="ts", y="price", title="Electricity price in Portugal")
 #But this way is better
 # TODO: Figure out a way to get it to ignore that so that there aren"t so many NaNs, without requiring index - like tidyr spread
 ax = price[["DoW", "price"]].pivot(columns="DoW").boxplot()
-ax = price[["Hour", "price"]].pivot(columns="Hour").boxplot()
+ax = price[["Date", "Hour", "price"]].pivot(
+        index="Date", columns="Hour").boxplot()
 
 #endregion
 
