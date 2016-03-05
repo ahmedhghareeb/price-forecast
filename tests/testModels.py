@@ -10,6 +10,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestRegressor
+from sklearn import cross_validation
 
 plt.style.use("ggplot")
 
@@ -77,6 +78,10 @@ price = (price.assign(Weekend = np.where(price["DoW"] >= 5, "Weekend",
                                     "Weekday")))
 
 # Add hourly lags for weather variables
+# TODO: See how gaps in the data are affecting the lags. Could possibly have
+#  a situation where the accuracy introduced by including lags is offset by
+# exluding more rows with NaNs. Maybe replace missing lagged values with
+# average?
 price = (price
          .assign(temperature_Portugal_lag1 = price[
     "temperature_Portugal"].shift(1))
@@ -139,21 +144,28 @@ ax = price[["Date", "Hour", "price"]].pivot(
 # Remove NaNs and unwanted columns for modelling and put into training data
 # dataframe
 # TODO: could try a better method for dealing with NaNs, e.g., fill in with the median, but ignoring for the moment. See: https://www.kaggle.com/c/titanic/details/getting-started-with-python-ii
-train_data_pd = price.dropna() #df used later when comparing predicted values
-train_data = train_data_pd.drop(["Year", "DoW", "DoY", "ts"], axis=1)
+all_data = price.dropna().copy() #copy needed or get SettingWithCopyWarning
+all_data["Weekend"] = all_data["Weekend"]\
+    .map( {"Weekend": 1, "Weekday": 0} )\
+    .astype(int)
+x_train, x_test, y_train, y_test = cross_validation.train_test_split(
+        all_data.drop(["Year", "DoW", "DoY", "ts", "Date", "price"], axis=1),
+        all_data["price"],
+        test_size=0.4, random_state=0)
+x_train = x_train.values
+x_test = x_test.values
+y_train = y_train.values
+y_test = y_test.values
 
 #sklearn needs a numpy.array which in turn needs all numeric data. Hence,
 # need to convert the Weekend column to a numeric
-train_data["Weekend"] = train_data["Weekend"]\
-    .map( {"Weekend": 1, "Weekday": 0} )\
-    .astype(int)
-train_data = train_data.values #numpy.array
+
 
 # Fit a model!!!! :D :D :D
 forest = RandomForestRegressor(n_estimators = 100)
 # Driver variables in columns 1 onwards. Response variable in colum zero.
 # 0:: means all rows, but could also have just used :
-forest = forest.fit(train_data[0::,1::],train_data[0::,0])
+forest = forest.fit(x_train, y_train)
 print forest.feature_importances_
 
 # TODO: Put together linear regression model
@@ -163,9 +175,9 @@ print forest.feature_importances_
 
 # Compare predictions against actuals
 # TODO: This throws a warning. Not the right way to assign numpy.ndarray to pandas data frame.
-train_data_pd["price_rf"] = forest.predict(train_data[0::,1::])
+all_data["price_rf"] = forest.predict(train_data[0::,1::])
 
-train_data_pd.plot(x="ts", y=["price", "price_rf"],
+all_data.plot(x="ts", y=["price", "price_rf"],
                    title="Price predictions compared to actuals")
 
 #endregion
