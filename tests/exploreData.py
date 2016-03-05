@@ -46,6 +46,10 @@ print pricePT.describe()
 genES[genES['solar_photovoltaic'].isnull()]
 
 
+
+# Can query data frames
+weather.query("point==1")
+
 # Plots
 #genES['solar_photovoltaic'].dropna().hist(bins=16, range=(0,80), alpha = .5)
 #genES.plot(x = 'date', y ='solar_photovoltaic')
