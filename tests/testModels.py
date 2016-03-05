@@ -18,13 +18,13 @@ os.chdir("/Users/cameronroach/Documents/PyCharm Projects/PriceForecast/tests")
 
 #region Load and transform data
 # Load data with pandas. Easier than csv module.
-pricePT = pd.read_csv("../data/HistData/price_PT.csv", header=0)
+pricePT = pd.read_csv("../data/HistData/price_PT.csv", header=0, sep=";")
 weather = pd.read_csv("../data/HistWeather/weather_hist.csv")
 locations = pd.read_csv("../data/HistWeather/locations.csv")
 
 # Rename columns
-pricePT.rename(columns = {"value":"price",
-                          "date":"ts"}, inplace=True)
+pricePT.rename(columns = {"Price":"price",
+                          "date (UTC)":"ts"}, inplace=True)
 weather.rename(columns = {"prediction_date":"ts"}, inplace=True)
 
 
