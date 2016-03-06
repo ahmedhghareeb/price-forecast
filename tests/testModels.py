@@ -10,7 +10,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestRegressor
-from sklearn import cross_validation
+from sklearn import cross_validation, linear_model
 
 plt.style.use("ggplot")
 
@@ -157,6 +157,7 @@ x_train = train_data.drop(["Year", "DoW", "DoY", "ts", "Date", "price"],
 x_test = test_data.drop(["Year", "DoW", "DoY", "ts", "Date", "price"],
                           axis=1)
 y_train = train_data["price"]
+y_test = test_data["price"]
 
 
 # Baseline models
@@ -170,39 +171,58 @@ baseline_avg = y_train.mean()
 forest = RandomForestRegressor(n_estimators = 100)
 forest_fit = forest.fit(x_train, y_train)
 # TODO: setup k-fold cross validation
-scores = cross_validation.cross_val_score(forest, x_train, y_train, cv=5)
-
-print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 1.96))
+scores = cross_validation.cross_val_score(forest, x_train, y_train, cv=5,
+                                          scoring="mean_absolute_error")
+print("Mean absolute error: %0.2f (+/- %0.2f)" % (scores.mean(),
+                                                  scores.std() * 1.96))
 print forest_fit.feature_importances_
 
-# TODO: Put together linear regression model and baseline models
 # Fit a regression model
+lr1 = linear_model.LinearRegression()
+lr1.fit(x_train, y_train)
+scores = cross_validation.cross_val_score(lr1, x_train, y_train, cv=5,
+                                          scoring="mean_absolute_error")
+print("Mean absolute error: %0.2f (+/- %0.2f)" % (scores.mean(),
+                                                  scores.std() * 1.96))
+print('Coefficients: \n', lr1.coef_)
+plt.scatter(y_test,  lr1.predict(x_test), color='black')
 
 
 
-# Compare predictions against actuals
-test_data["price_bl_avg"] = baseline_avg
-test_data["price_rf"] = forest_fit.predict(x_test)
 
-test_data.plot(x="ts", y=["price", "price_bl_avg", "price_rf"],
-                   title="Price predictions compared to actuals")
 
 #endregion
 
 
+#region Evaluation metrics for test data
+# Compare predictions against actuals
+test_data["price_bl_avg"] = baseline_avg
+test_data["price_rf"] = forest_fit.predict(x_test)
+test_data["price_lr1"] = lr1.predict(x_test)
+test_data.plot(x="ts", y=["price", "price_bl_avg", "price_rf", "price_lr1"],
+                   title="Price predictions compared to actuals")
 
-#region Evaluation metrics
-test_data["ae_rf"] = abs(test_data["price"]-test_data["price_rf"])
-test_data["ape_rf"] = test_data["ae_rf"]/test_data["price"]
+
+# Note: this should only really be looked at once the best model setup has
+# been decided from the cross-validation steps.
 test_data["ae_bl_avg"] = abs(test_data["price"]-test_data["price_bl_avg"])
 test_data["ape_bl_avg"] = test_data["ae_bl_avg"]/test_data["price"]
+test_data["ae_rf"] = abs(test_data["price"]-test_data["price_rf"])
+test_data["ape_rf"] = test_data["ae_rf"]/test_data["price"]
+test_data["ae_lr1"] = abs(test_data["price"]-test_data["price_lr1"])
+test_data["ape_lr1"] = test_data["ae_lr1"]/test_data["price"]
 
-test_data.plot(x="ts", y=["ae_rf", "ae_bl_avg"])
-test_data.plot(x="ts", y=["ape_rf", "ape_bl_avg"])
+test_data.plot(x="ts", y=["ae_rf", "ae_bl_avg", "ae_lr1"])
+test_data.plot(x="ts", y=["ape_rf", "ape_bl_avg", "ape_lr1"])
 
 plt.scatter(x=test_data["temperature_Portugal"],
             y=test_data["ae_rf"])
 plt.scatter(x=test_data["temperature_Portugal"],
             y=test_data["ape_rf"])
 
+print("Mean absolute errors:")
+print test_data[["ae_bl_avg", "ae_rf", "ae_lr1"]].mean(axis=0)
+
+print("Mean absolute percentage errors:")
+print test_data[["ape_bl_avg", "ape_rf", "ape_lr1"]].mean(axis=0)
 #endregion
