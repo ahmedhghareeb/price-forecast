@@ -158,6 +158,14 @@ x_test = test_data.drop(["Year", "DoW", "DoY", "ts", "Date", "price"],
                           axis=1)
 y_train = train_data["price"]
 
+
+# Baseline models
+baseline_avg = y_train.mean()
+# TODO: baseline_naive = last value. Need to do k-fold cross validation for
+# this with the folds equal to the size of the forecast horizon (5 days)
+
+
+
 # Fit random forest
 forest = RandomForestRegressor(n_estimators = 100)
 forest_fit = forest.fit(x_train, y_train)
@@ -173,9 +181,10 @@ print forest_fit.feature_importances_
 
 
 # Compare predictions against actuals
+test_data["price_bl_avg"] = baseline_avg
 test_data["price_rf"] = forest_fit.predict(x_test)
 
-test_data.plot(x="ts", y=["price", "price_rf"],
+test_data.plot(x="ts", y=["price", "price_bl_avg", "price_rf"],
                    title="Price predictions compared to actuals")
 
 #endregion
@@ -185,12 +194,15 @@ test_data.plot(x="ts", y=["price", "price_rf"],
 #region Evaluation metrics
 test_data["ae_rf"] = abs(test_data["price"]-test_data["price_rf"])
 test_data["ape_rf"] = test_data["ae_rf"]/test_data["price"]
-test_data.plot(x="ts", y="ae_rf")
-test_data.plot(x="ts", y="ape_rf")
+test_data["ae_bl_avg"] = abs(test_data["price"]-test_data["price_bl_avg"])
+test_data["ape_bl_avg"] = test_data["ae_bl_avg"]/test_data["price"]
+
+test_data.plot(x="ts", y=["ae_rf", "ae_bl_avg"])
+test_data.plot(x="ts", y=["ape_rf", "ape_bl_avg"])
+
 plt.scatter(x=test_data["temperature_Portugal"],
             y=test_data["ae_rf"])
 plt.scatter(x=test_data["temperature_Portugal"],
             y=test_data["ape_rf"])
-
 
 #endregion
