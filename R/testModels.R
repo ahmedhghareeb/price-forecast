@@ -7,11 +7,8 @@
 
 # TODO: Try to split up hours so that each hour has it's own additive model
 # TODO: Add public holiday effects.
-# TODO: Why is data ending in october 2015? What is causing this cutoff
-# TODO: Switch from k-fold cross-validation to time-series cross validation.
-# Caret has functionality for this. See
-# http://www.r-bloggers.com/time-series-cross-validation-5/
-
+# TODO: Double check prices are loaded correctly. Worried that day might be out
+# by one. Double check when I can think clearly.
 
 rm(list=ls())
 
@@ -149,10 +146,15 @@ price %>%
 
 
 #### Fit models ===============================================================
+# fitControl <- trainControl(
+#   method = "repeatedcv",
+#   number = 10,
+#   repeats = 10,
+#   summaryFunction = maeSummary)
 fitControl <- trainControl(
-  method = "repeatedcv",
-  number = 10,
-  repeats = 10,
+  method = "timeslice",
+  initialWindow = 150,
+  horizon=14,
   summaryFunction = maeSummary)
 
 # Linear models
@@ -235,12 +237,16 @@ price <- price %>%
          Price_lm5 = predict(model_lm5, newdata = price),
          r_lm5 = Price - Price_lm5)
 
-price %>% 
-  filter(month(ts)==3) %>% 
-  select(ts, Price, Price_lm5, r_lm5) %>% 
-  gather(var, value, -ts) %>% 
-  ggplot(aes(x=ts, y=value, colour=var)) +
-  geom_line()
+for(i in 1:12) {
+  p <- price %>% 
+    filter(month(ts)==i) %>% 
+    select(ts, Price, Price_lm5, r_lm5) %>% 
+    gather(var, value, -ts) %>% 
+    ggplot(aes(x=ts, y=value, colour=var)) +
+    geom_line() +
+    ggtitle(paste("Price actuals and predictions for", month.name[i], "2015"))
+  print(p)
+}
 
 
 
