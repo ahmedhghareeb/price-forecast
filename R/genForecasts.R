@@ -27,6 +27,30 @@ weatherFcst <- read.csv(paste0("./data/FcstWeather/",
   rename(ts = prediction_date)
 locations = read.csv("./data/HistWeather/locations.csv", stringsAsFactors = FALSE)
 
+# Load last week of prices for lagged price variable
+pricesLastWeek <- NULL
+for(i in 6:0) {
+  priceDate = fcstStartDay-days(i)
+  priceFileName <- paste0("INT_PBC_EV_H_1_",
+                          strftime(priceDate, "%d_%m_%Y_"),
+                          strftime(priceDate, "%d_%m_%Y"),
+                          ".txt")
+  price_tmp <- read.csv(paste0("./data/PricesLastWeek/", priceFileName),
+                        skip=2, sep=";") %>% 
+    slice(1) %>%
+    select(-X) %>% 
+    gather(Hour, Price) %>% 
+    na.omit() %>% 
+    mutate(Hour = as.numeric(str_extract(Hour, "[[:digit:]]+")) - 1,
+           Price = as.numeric(str_replace(Price, ",", ".")),
+           ts = priceDate + hours(Hour))
+  pricesLastWeek = bind_rows(pricesLastWeek, price_tmp)
+}
+pricesLagged = pricesLastWeek %>% 
+  select(ts, Price_l168 = Price) %>% 
+  mutate(ts = ts + days(7))
+rm(pricesLastWeek)
+
 # TOOD: Load holidays
 
 
@@ -82,6 +106,9 @@ weatherMean = weatherMean %>%
          S_temperature_l2 = ifelse(is.na(S_temperature_l2), S_temperature, 
                                    S_temperature_l2)
   )
+
+# Join lagged prices
+weatherMean <- inner_join(weatherMean, pricesLagged)
 
 
 #### Predict forecasts ========================================================

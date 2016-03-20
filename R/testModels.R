@@ -6,6 +6,12 @@
 # Author: Cameron Roach
 
 # TODO: Try to split up hours so that each hour has it's own additive model
+# TODO: Add public holiday effects.
+# TODO: Why is data ending in october 2015? What is causing this cutoff
+# TODO: Switch from k-fold cross-validation to time-series cross validation.
+# Caret has functionality for this. See
+# http://www.r-bloggers.com/time-series-cross-validation-5/
+
 
 rm(list=ls())
 
@@ -90,8 +96,18 @@ price = price %>%
                                    S_temperature_l1),
          S_temperature_l2 = lag(S_temperature, 2),
          S_temperature_l2 = ifelse(is.na(S_temperature_l2), S_temperature, 
-                                   S_temperature_l2)
+                                   S_temperature_l2),
+         # Price_l24 = lag(Price, 24),
+         # Price_l24 = ifelse(is.na(Price_l24), Price, 
+         #                    Price_l24),
+         # Price_l48 = lag(Price, 48),
+         # Price_l48 = ifelse(is.na(Price_l48), Price, 
+         #                    Price_l48),
+         Price_l168 = lag(Price, 168),
+         Price_l168 = ifelse(is.na(Price_l168), Price, 
+                            Price_l168)
          )
+
 
 #### Plots ====================================================================
 price %>% 
@@ -155,6 +171,7 @@ model_lm2 <- train(Price ~ ns(P_temperature, 3) + ns(S_temperature, 3) +
                      P_temperature_l2 + S_temperature_l1 + S_temperature_l2,
                    data = price,
                    method="lm",
+                   metric="MAE",
                    trControl = fitControl
 )
 summary(model_lm2)
@@ -167,10 +184,37 @@ model_lm3 <- train(Price ~ ns(P_temperature, 3) + ns(S_temperature, 3) +
                      S_precipitation + S_pressure + S_wind_speed_100m,
                    data = price,
                    method="lm",
+                   metric="MAE",
                    trControl = fitControl
 )
 summary(model_lm3)
 model_lm3
+
+
+model_lm4 <- train(Price ~ Price_l168 + DoW2 + ns(DoY, 4) + Hour,
+                   data = price,
+                   method="lm",
+                   metric="MAE",
+                   trControl = fitControl
+)
+summary(model_lm4)
+model_lm4
+
+#Note: removed S_precipitation because this is the same as P_precipitation for
+#all times.
+# TODO: Check why this has happened. Same for all weather stations?
+model_lm5 <- train(Price ~ ns(P_temperature, 3) + ns(S_temperature, 3) + 
+                     Hour + DoW2 + ns(DoY, 4) + P_temperature_l1 + 
+                     P_temperature_l2 + S_temperature_l1 + S_temperature_l2 +
+                     P_precipitation + P_pressure + P_wind_speed_100m + 
+                     S_pressure + S_wind_speed_100m + Price_l168,
+                   data = price,
+                   method="lm",
+                   metric="MAE",
+                   trControl = fitControl
+)
+summary(model_lm5)
+model_lm5
 
 
 # model_rf <- train(Price ~ P_temperature + S_temperature + Hour + DoW2 + Month,
@@ -185,11 +229,15 @@ price <- price %>%
          Price_lm2 = predict(model_lm2, newdata = price),
          r_lm2 = Price - Price_lm2,
          Price_lm3 = predict(model_lm3, newdata = price),
-         r_lm3 = Price - Price_lm3)
+         r_lm3 = Price - Price_lm3,
+         Price_lm4 = predict(model_lm4, newdata = price),
+         r_lm4 = Price - Price_lm4,
+         Price_lm5 = predict(model_lm5, newdata = price),
+         r_lm5 = Price - Price_lm5)
 
 price %>% 
   filter(month(ts)==3) %>% 
-  select(ts, Price, Price_lm3, r_lm3) %>% 
+  select(ts, Price, Price_lm5, r_lm5) %>% 
   gather(var, value, -ts) %>% 
   ggplot(aes(x=ts, y=value, colour=var)) +
   geom_line()
@@ -197,7 +245,7 @@ price %>%
 
 
 #### Choose final model and save ==============================================
-finalModel <- model_lm3
+finalModel <- model_lm5
 
 dir.create("./cache", F, T)
 save(finalModel, file="./cache/finalModel.RData")
