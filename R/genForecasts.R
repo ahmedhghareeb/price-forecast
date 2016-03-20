@@ -14,7 +14,7 @@ require(stringr)
 require(lubridate)
 require(caret)
 
-fcstStartDay = today()
+fcstStartDay = ymd(today(), tz="CET")
 
 #### Load data ================================================================
 load("./cache/finalModel.RData")
@@ -87,20 +87,43 @@ weatherMean = weatherMean %>%
 #### Predict forecasts ========================================================
 weatherMean$predictions <- predict(finalModel, newdata = weatherMean)
 
-weatherMean <- weatherMean %>% 
-  filter(as.Date(ts) <= fcstStartDay + days(4))
 
-ggplot(weatherMean, aes(x=ts, y=predictions)) + geom_line()
+
+#### UTC adjustment for CUT =================================================== 
+#It seems as though I should be forecasting from 00:00 CET onwards (for 5 days),
+#but everything so far has been done in UTC
+weatherMean <- weatherMean %>% 
+  mutate(ts = with_tz(ts, tz="CET")) %>% 
+  select(-c(Date, Hour, DoY, DoW, DoW2, Weekend, Year, Month)) %>% 
+  filter(ts >= fcstStartDay + days(1),
+         ts < fcstStartDay + days(6))
+
+# # Add an extra row which is just a duplicate of the first prediction for earlier
+# # hours than weather forecasts
+# missingFcstHour <- weatherMean[1,]
+# weatherMean <- bind_rows(
+#   mutate(missingFcstHour, ts = ts-hours(1)),
+#   weatherMean
+# )
+
+# Can now convert back to UTC
+weatherMean <- weatherMean %>% 
+  mutate(ts = with_tz(ts, tz="UTC"))
+
+
+#### Plots ====================================================================
 ggplot(weatherMean, aes(x=ts)) + 
   geom_line(aes(y=S_temperature), colour="blue") + 
   geom_line(aes(y=P_temperature), colour="red")
+ggplot(weatherMean, aes(x=ts, y=predictions)) + geom_line()
+
 
 
 #### Output ===================================================================
 outputForecasts <- data.frame(
   forecaster = "1639e1334b2ec40805be8dedc132764d",
   availabledate = strftime(fcstStartDay, "%d-%m-%Y"),
-  predictiondate = strftime(weatherMean$ts, "%d-%m-%Y"),
+  predictiondate = strftime(weatherMean$ts, "%d-%m-%Y", tz="UTC"),
   hour = hour(weatherMean$ts),
   value = weatherMean$predictions
 )
