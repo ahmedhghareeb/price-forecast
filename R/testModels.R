@@ -13,6 +13,7 @@ require(tidyr)
 require(stringr)
 require(lubridate)
 require(caret)
+require(splines)
 
 
 #### Load data ================================================================
@@ -47,8 +48,8 @@ price = inner_join(pricePT, weatherMean)
 price <- price %>% 
   mutate(
     Year = year(ts),
-    Month = month(ts),
-    Hour = hour(ts),
+    Month = factor(month(ts)),
+    Hour = factor(hour(ts)),
     DoW = wday(ts, label=TRUE),
     DoY = yday(ts),
     Date = floor_date(ts, "day"),
@@ -70,3 +71,25 @@ price = price %>%
 
 
 #### Fit models ===============================================================
+fitControl <- trainControl(
+  method = "repeatedcv",
+  number = 10,
+  repeats = 10)
+
+model_lm <- train(Price ~ P_temp + S_temp + Hour + DoW + ns(DoY, 4),
+                  data = price,
+                  method="lm",
+                  trControl = fitControl
+                  )
+
+
+price <- price %>% 
+  mutate(predict_lm = predict(model_lm, newdata = price),
+         r_lm = Price - predict_lm)
+
+price %>% 
+  filter(month(ts)==4) %>% 
+  select(ts, Price, predict_lm, r_lm) %>% 
+  gather(var, value, -ts) %>% 
+  ggplot(aes(x=ts, y=value, colour=var)) +
+  geom_line()
