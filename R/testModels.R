@@ -219,6 +219,15 @@ summary(model_lm5)
 model_lm5
 
 
+model_lm6 <- train(Price ~ Price_l168,
+                   data = price,
+                   method="lm",
+                   metric="MAE",
+                   trControl = fitControl
+)
+summary(model_lm6)
+model_lm6
+
 # model_rf <- train(Price ~ P_temperature + S_temperature + Hour + DoW2 + Month,
 #                   data = price %>% sample_n(1000),
 #                   method="rf")
@@ -235,7 +244,9 @@ price <- price %>%
          Price_lm4 = predict(model_lm4, newdata = price),
          r_lm4 = Price - Price_lm4,
          Price_lm5 = predict(model_lm5, newdata = price),
-         r_lm5 = Price - Price_lm5)
+         r_lm5 = Price - Price_lm5,
+         Price_lm6 = predict(model_lm6, newdata = price),
+         r_lm6 = Price - Price_lm6)
 
 for(i in 1:12) {
   p <- price %>% 
