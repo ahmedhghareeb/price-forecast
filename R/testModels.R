@@ -102,8 +102,8 @@ price = price %>%
          #                    Price_l48),
          Price_l168 = lag(Price, 168),
          Price_l168 = ifelse(is.na(Price_l168), Price, 
-                            Price_l168)
-         )
+                             Price_l168)
+  )
 
 
 #### Plots ====================================================================
@@ -158,13 +158,23 @@ fitControl <- trainControl(
   summaryFunction = maeSummary)
 
 # Linear models
+model_lmBL <- train(Price ~ Price_l168,
+                    data = price,
+                    method="lm",
+                    metric="MAE",
+                    trControl = fitControl
+)
+summary(model_lmBL)
+model_lmBL
+
+
 model_lm1 <- train(Price ~ ns(P_temperature, 3) + ns(S_temperature, 3) + 
                      Hour + DoW2 + ns(DoY, 4),
-                  data = price,
-                  method="lm",
-                  metric="MAE",
-                  trControl = fitControl
-                  )
+                   data = price,
+                   method="lm",
+                   metric="MAE",
+                   trControl = fitControl
+)
 summary(model_lm1)
 model_lm1
 
@@ -219,7 +229,7 @@ summary(model_lm5)
 model_lm5
 
 
-model_lm6 <- train(Price ~ Price_l168,
+model_lm6 <- train(Price ~ Price_l168 + DoW2 + Hour,
                    data = price,
                    method="lm",
                    metric="MAE",
@@ -227,6 +237,30 @@ model_lm6 <- train(Price ~ Price_l168,
 )
 summary(model_lm6)
 model_lm6
+
+# TODO:try adding ns(DoY, 4), got an improved result with Month driver included
+model_lm7 <- train(Price ~ Price_l168 + DoW2 + Hour + S_wind_speed_100m,
+                   data = price,
+                   method="lm",
+                   metric="MAE",
+                   trControl = fitControl
+)
+summary(model_lm7)
+model_lm7
+
+# Interesting comparison to lm7. Including Portugal wind speed makes forecast
+# worse. TODO: Check if an average of all weather stations in portugal and spain
+# improves MAE even more.
+model_lm7b <- train(Price ~ Price_l168 + DoW2 + Hour + P_wind_speed_100m +
+                     S_wind_speed_100m,
+                   data = price,
+                   method="lm",
+                   metric="MAE",
+                   trControl = fitControl
+)
+summary(model_lm7)
+model_lm7
+
 
 # model_rf <- train(Price ~ P_temperature + S_temperature + Hour + DoW2 + Month,
 #                   data = price %>% sample_n(1000),
@@ -246,12 +280,14 @@ price <- price %>%
          Price_lm5 = predict(model_lm5, newdata = price),
          r_lm5 = Price - Price_lm5,
          Price_lm6 = predict(model_lm6, newdata = price),
-         r_lm6 = Price - Price_lm6)
+         r_lm6 = Price - Price_lm6,
+         Price_lm7 = predict(model_lm7, newdata = price),
+         r_lm7 = Price - Price_lm7)
 
 for(i in 1:12) {
   p <- price %>% 
     filter(month(ts)==i) %>% 
-    select(ts, Price, Price_lm5, r_lm5) %>% 
+    select(ts, Price, Price_lm7, r_lm7) %>% 
     gather(var, value, -ts) %>% 
     ggplot(aes(x=ts, y=value, colour=var)) +
     geom_line() +
@@ -262,7 +298,7 @@ for(i in 1:12) {
 
 
 #### Choose final model and save ==============================================
-finalModel <- model_lm5
+finalModel <- model_lm7
 
 dir.create("./cache", F, T)
 save(finalModel, file="./cache/finalModel.RData")
