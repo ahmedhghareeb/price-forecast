@@ -152,8 +152,9 @@ price %>%
 #   summaryFunction = maeSummary)
 fitControl <- trainControl(
   method = "timeslice",
-  initialWindow = 150,
-  horizon=14,
+  initialWindow = 40*24,
+  horizon=5*24,
+  fixedWindow=FALSE,
   summaryFunction = maeSummary)
 
 # Linear models
