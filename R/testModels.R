@@ -1,11 +1,10 @@
-# Name: Forecast electricity prices
+# Name: testModels
 # 
 # Description: This script is a conversion of the testModels.py script for R.
-# Additional functionality will be added. Tests models and predicts prices.
+# Fits and tests models for electricity price forecasting.
 #
 # Author: Cameron Roach
 
-# TODO: Try to split up hours so that each hour has it's own additive model
 # TODO: Add public holiday effects.
 # TODO: Double check prices are loaded correctly. Worried that day might be out
 # by one. Double check when I can think clearly.
