@@ -103,8 +103,9 @@ price = price %>%
 #### Fit models ===============================================================
 fitControl <- trainControl(
   method = "timeslice",
-  initialWindow = 150,
-  horizon=14,
+  initialWindow = 40,
+  horizon=5,
+  fixedWindow=FALSE,
   summaryFunction = maeSummary)
 
 # TODO: Check which linear model tends to work best for individual hours
