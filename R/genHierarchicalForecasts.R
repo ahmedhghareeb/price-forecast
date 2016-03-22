@@ -14,22 +14,29 @@ require(stringr)
 require(lubridate)
 require(caret)
 
-fcstStartDay = ymd(today(), tz="CET")
+subDate = ymd("2016-03-22", tz="CET")
 
 #### Load data ================================================================
 load("./cache/HierarchicalModel.RData")
 
+# TODO: I may have been using the wrong weather file!!!! Should not have
+# -days(1). Unfortunately, this means that I won't have a weather fcst value for
+# hour 23 on the first forecast day, so need to use previous day's forecast to
+# fill in weather for this hour.
 weatherFcst <- read.csv(paste0("./data/FcstWeather/",
-                               strftime(fcstStartDay - days(1), "%Y-%m-%d"),
+                               strftime(subDate - days(1), "%Y-%m-%d"),
                                "_06-00-00.csv")) %>% 
   mutate(available_date = ymd_hms(available_date),
          prediction_date = ymd_hms(prediction_date)) %>% 
   rename(ts = prediction_date)
 
+# TODO: Not convinced that I am doing the lag properly. Might be out by one day.
+# Double check when I have a clear mind or eating spaghetti.
+
 # Load last week of prices for lagged price variable
 pricesLastWeek <- NULL
 for(i in 6:0) {
-  priceDate = fcstStartDay-days(i)
+  priceDate = subDate-days(i)
   priceFileName <- paste0("INT_PBC_EV_H_1_",
                           strftime(priceDate, "%d_%m_%Y_"),
                           strftime(priceDate, "%d_%m_%Y"),
@@ -42,7 +49,7 @@ for(i in 6:0) {
     na.omit() %>% 
     mutate(Hour = as.numeric(str_extract(Hour, "[[:digit:]]+")) - 1,
            Price = as.numeric(str_replace(Price, ",", ".")),
-           ts = priceDate + hours(Hour))
+           ts = priceDate - days(1) + hours(Hour))
   pricesLastWeek = bind_rows(pricesLastWeek, price_tmp)
 }
 pricesLagged = pricesLastWeek %>% 
@@ -133,8 +140,8 @@ price_pred <- price_pred %>%
 price_pred <- price_pred %>% 
   mutate(ts = with_tz(ts, tz="CET")) %>% 
   select(-c(Date, Hour, DoY, DoW, DoW2, Weekend, Year, Month)) %>% 
-  filter(ts >= fcstStartDay + days(1),
-         ts < fcstStartDay + days(6))
+  filter(ts >= subDate + days(1),
+         ts < subDate + days(6))
 
 
 # Can now convert back to UTC
@@ -150,7 +157,7 @@ ggplot(price_pred, aes(x=ts, y=predictions)) + geom_line()
 #### Output ===================================================================
 outputForecasts <- data.frame(
   forecaster = "1639e1334b2ec40805be8dedc132764d",
-  availabledate = strftime(fcstStartDay, "%d-%m-%Y"),
+  availabledate = strftime(subDate, "%d-%m-%Y"),
   predictiondate = strftime(price_pred$ts, "%d-%m-%Y", tz="UTC"),
   hour = hour(price_pred$ts),
   value = price_pred$predictions
@@ -158,6 +165,6 @@ outputForecasts <- data.frame(
 
 dir.create("./cache", F, T)
 filename = paste0("1639e1334b2ec40805be8dedc132764d_",
-                  strftime(fcstStartDay, "%Y-%m-%d"))
+                  strftime(subDate, "%Y-%m-%d"))
 write.csv(outputForecasts, file = paste0("./cache/", filename, ".csv"),
           row.names=F, quote=F)
