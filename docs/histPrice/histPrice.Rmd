@@ -1,0 +1,97 @@
+---
+title: "Prices drivers"
+author: "Cameron Roach"
+date: "23 March 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+
+#dataDir <- "./docs/histPrice"
+dataDir <- "."
+#genDataFile <- "./data/HistData/gen_PT.csv"
+genDataFile <- "./../../data/HistData/gen_PT.csv"
+
+require(dplyr)
+require(lubridate)
+require(tidyr)
+require(ggplot2)
+
+prices <- read.csv(file.path(dataDir, "histPrice.csv")) %>% 
+  rename(Date = DATA,
+         Session = SESSAO,
+         Hour = HORA,
+         Price_PT = PRECO_PT,
+         Price_ES = PRECO_ES) %>% 
+  mutate(ts = dmy(Date) + hours(Hour-1)) %>% 
+  filter(Session==0) %>% 
+  select(-c(Hour, Session, Price_ES, Date))
+
+gen <- read.csv(genDataFile) %>% 
+  mutate(ts = ymd_hms(date)) %>% 
+  select(-c(date, id))
+
+df <- inner_join(prices, gen)
+```
+
+## Historical price drop
+
+There appears to be a level shift between 2015 and 2016 in prices.
+
+```{r}
+prices %>% 
+  ggplot(aes(x=ts, y=Price_PT)) +
+  geom_line() +
+  ggtitle("Portugal electricity prices.")
+```
+
+### Generation
+
+This may be caused by generation type. Here are the generation time series for Portugal.
+
+```{r}
+df %>% 
+  gather(Generation, MWh, -c(ts, Price_PT)) %>%
+  ggplot(aes(x=ts, y=Price_PT)) +
+  geom_line() +
+  facet_wrap(~Generation) +
+  ggtitle("Generation time series.")
+```
+
+Unfortunately, the generation data only extends to 31 December 2015 and so the change in relationship after the level shift occurs can't really be observed.
+
+Correlation is shown below.
+
+```{r}
+df %>% 
+  gather(Generation, MWh, -c(ts, Price_PT)) %>%
+  ggplot(aes(x=MWh, y=Price_PT)) +
+  geom_point() +
+  facet_wrap(~Generation, scales="free_x") +
+  geom_smooth() + 
+  ggtitle("Correlation generation and price")
+
+```
+
+
+Remove fuel\_oil and ssg\_wave because no correlation present.
+
+```{r}
+df <- select(df, -c(fuel_oil, ssg_wave))
+
+df %>% 
+  gather(Generation, MWh, -c(ts, Price_PT)) %>%
+  ggplot(aes(x=MWh, y=Price_PT)) +
+  geom_point() +
+  facet_wrap(~Generation, scales="free_x") +
+  geom_smooth() + 
+  ggtitle("Correlation generation and price")
+
+
+```
+
+
+### Weather
