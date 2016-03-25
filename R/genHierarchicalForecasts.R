@@ -13,8 +13,9 @@ require(ggplot2)
 require(stringr)
 require(lubridate)
 require(caret)
+require(splines)
 
-subDate = ymd("2016-03-22", tz="CET")
+subDate = ymd("2016-03-24", tz="CET")
 
 #### Load data ================================================================
 load("./cache/HierarchicalModel.RData")
