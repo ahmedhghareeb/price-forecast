@@ -37,7 +37,7 @@ for(i in 6:0) {
                           ".txt")
   price_tmp <- read.csv(paste0("./data/PricesLastWeek/", priceFileName),
                         skip=2, sep=";") %>% 
-    slice(1) %>%
+    slice(2) %>% # 2nd row has portugal prices
     select(-X) %>% 
     gather(Hour, Price) %>% 
     na.omit() %>% 
