@@ -16,6 +16,9 @@ require(lubridate)
 require(caret)
 require(splines)
 
+dataStart <- ymd("2016-02-12", tz="CET")
+subDate <- ymd("2016-03-30", tz="CET")
+n_data <- round(as.numeric(subDate - dataStart))
 
 #### Functions ================================================================
 maeSummary <- function (data,
@@ -28,14 +31,58 @@ maeSummary <- function (data,
 
 #### Load data ================================================================
 #Load and transform data
-pricePT = read.csv("./data/HistData/price_PT.csv", sep=";") %>% 
-  rename(ts = `date..UTC.`) %>% 
-  mutate(ts = dmy_hm(ts))
-weather = read.csv("./data/HistWeather/weather_hist.csv") %>% 
-  rename(ts = prediction_date) %>% 
-  mutate(ts = dmy_hm(ts))
+# pricePT_old = read.csv("./data/HistData/price_PT.csv", sep=";") %>% 
+#   rename(ts = `date..UTC.`) %>% 
+#   mutate(ts = dmy_hm(ts))
+# weather_old = read.csv("./data/HistWeather/weather_hist.csv") %>% 
+#   rename(ts = prediction_date) %>% 
+#   mutate(ts = dmy_hm(ts))
 
-#merge(pricePT, weather[weather$point==5,]) %>% select(-ts, -point) %>% pairs()
+
+
+weather <- NULL
+for(i in n_data:0) {
+  # Load first day from each day's weather forecast
+  weatherDate = subDate-days(i)
+  weather_tmp <- read.csv(paste0("./data/FcstWeather/",
+                                 strftime(weatherDate, "%Y-%m-%d"),
+                                 "_06-00-00.csv")) %>% 
+    mutate(available_date = ymd_hms(available_date, tz="CET"),
+           prediction_date = ymd_hms(prediction_date, tz="CET")) %>% 
+    rename(ts = prediction_date) %>% 
+    filter(floor_date(ts, "day") == weatherDate + days(1)) %>% 
+    select(-available_date)
+  
+  weather <- bind_rows(weather, weather_tmp)
+}
+
+
+
+pricePT <- NULL
+for(i in n_data:0) {
+  priceDate = subDate-days(i)
+  priceFileName <- paste0("INT_PBC_EV_H_1_",
+                          strftime(priceDate, "%d_%m_%Y_"),
+                          strftime(priceDate, "%d_%m_%Y"),
+                          ".txt")
+  price_tmp <- read.csv(paste0("./data/PricesLastWeek/", priceFileName),
+                        skip=2, sep=";") %>% 
+    slice(2) %>% # 2nd row has portugal prices
+    select(-X) %>% 
+    gather(Hour, Price) %>% 
+    na.omit() %>% 
+    mutate(Hour = as.numeric(str_extract(Hour, "[[:digit:]]+")) - 1,
+           Price = as.numeric(str_replace(Price, ",", ".")),
+           # TODO: confused by this. Could be off by a day.
+           #ts = priceDate - days(1) + hours(Hour))
+           ts = priceDate + hours(Hour)) %>% 
+    select(-Hour)
+  pricePT = bind_rows(pricePT, price_tmp)
+}
+
+
+
+
 
 #### Engineer features ========================================================
 # Group weather stations in same countries and take simple average of
@@ -93,6 +140,9 @@ price = price %>%
          temperature_mean_l24 = lag(temperature_mean, 24),
          temperature_mean_l24 = ifelse(is.na(temperature_mean_l2), temperature_mean, 
                                        temperature_mean_l2),
+         Price_l24 = lag(Price, 24),
+         Price_l24 = ifelse(is.na(Price_l24), Price, 
+                             Price_l24),
          Price_l168 = lag(Price, 168),
          Price_l168 = ifelse(is.na(Price_l168), Price, 
                              Price_l168)
@@ -103,7 +153,7 @@ price = price %>%
 #### Fit models ===============================================================
 fitControl <- trainControl(
   method = "timeslice",
-  initialWindow = 40,
+  initialWindow = 20,
   horizon=5,
   fixedWindow=FALSE,
   summaryFunction = maeSummary)
@@ -113,9 +163,10 @@ model_h <- list()
 mae <- rep(NA, 24)
 for (i in 0:23) {
   cat(paste("Fitting hour", i, "...\n"))
-  model_h[[i+1]] <- train(Price ~ Price_l168 + DoW2 + wind_speed_100m_mean + 
-                            ns(temperature_mean, 2) +
-                            pressure_mean,
+  # model_h[[i+1]] <- train(Price ~ Price_l168 + DoW2 + wind_speed_100m_mean + 
+  #                           ns(temperature_mean, 2) +
+  #                           pressure_mean,
+  model_h[[i+1]] <- train(Price ~ Price_l24 + DoW2 + poly(wind_speed_100m_mean, 2),
                           data = filter(price, Hour == i),
                           method="lm",
                           metric="MAE",
@@ -140,14 +191,14 @@ for (i in 0:23) {
 price_pred <- price_pred %>% 
   arrange(ts)
 
-for(i in 1:12) {
+for(i in unique(months(price_pred$ts))) {
   p <- price_pred %>% 
-    filter(month(ts)==i) %>% 
+    filter(month(ts, label=T, abbr=F)==i) %>% 
     select(ts, Price, Price_h, r_h) %>% 
     gather(var, value, -ts) %>% 
     ggplot(aes(x=ts, y=value, colour=var)) +
     geom_line() +
-    ggtitle(paste("Price actuals and predictions for", month.name[i], "2015"))
+    ggtitle(paste("Price actuals and predictions for", i, "2015"))
   print(p)
 }
 
