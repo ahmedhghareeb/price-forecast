@@ -17,19 +17,26 @@ require(splines)
 
 subDate <- ymd("2016-03-30", tz="CET")
 
-#### Load data ================================================================
-load("./cache/HierarchicalModel.RData")
+#### Run model with latest data ===============================================
+source("./R/testModels_heirarchical.R")
+finalModel <- genHourPriceModel(subDate)
 
-# TODO: I may have been using the wrong weather file!!!! Should not have
-# -days(1). Unfortunately, this means that I won't have a weather fcst value for
-# hour 23 on the first forecast day, so need to use previous day's forecast to
-# fill in weather for this hour.
+#### Load data ================================================================
+# Load yesterday's weather forecast to get hours 23 and 24 for submission date.
 weatherFcst <- read.csv(paste0("./data/FcstWeather/",
                                strftime(subDate - days(1), "%Y-%m-%d"),
                                "_06-00-00.csv")) %>% 
   mutate(available_date = ymd_hms(available_date),
          prediction_date = ymd_hms(prediction_date)) %>% 
-  rename(ts = prediction_date)
+  rename(ts = prediction_date) %>% 
+  filter(floor_date(ts, "day") == floor_date(with_tz(subDate, "UTC"), "day") + days(1))
+weatherFcst <- read.csv(paste0("./data/FcstWeather/",
+                               strftime(subDate, "%Y-%m-%d"),
+                               "_06-00-00.csv")) %>% 
+  mutate(available_date = ymd_hms(available_date),
+         prediction_date = ymd_hms(prediction_date)) %>% 
+  rename(ts = prediction_date) %>% 
+  bind_rows(weatherFcst)
 
 # TODO: Not convinced that I am doing the lag properly. Might be out by one day.
 # Double check when I have a clear mind or eating spaghetti.
@@ -58,7 +65,14 @@ pricesLagged = pricesLastWeek %>%
   mutate(ts = ts + days(7))
 rm(pricesLastWeek)
 
-# TOOD: Load holidays
+
+
+holidays <- read.csv("./data/holidays.csv", header = F, 
+                     col.names = c("Date", "Date2", "DoW", "Holiday",
+                                   "Description", "Country")) %>% 
+  mutate(Date = dmy(Date, tz="CET")) %>% 
+  select(Date) %>% 
+  distinct()
 
 
 
@@ -68,16 +82,20 @@ weather = weatherFcst %>%
   group_by(ts) %>% 
   summarise(temperature_mean = mean(temperature, na.rm=TRUE),
             wind_speed_100m_mean = mean(wind_speed_100m, na.rm=TRUE),
+            wind_speed_mean = mean(wind_speed, na.rm=TRUE),
             pressure_mean = mean(pressure, na.rm=TRUE),
             precipitation_mean = mean(precipitation, na.rm=TRUE),
             temperature_sd = sd(temperature, na.rm=TRUE),
             wind_speed_100m_sd = sd(wind_speed_100m, na.rm=TRUE),
+            wind_speed_sd = sd(wind_speed, na.rm=TRUE),
             pressure_sd = sd(pressure, na.rm=TRUE),
             precipitation_sd = sd(precipitation, na.rm=TRUE),
             temperature_diff = max(temperature, na.rm=TRUE) - 
               min(temperature, na.rm=TRUE),
             wind_speed_100m_diff = max(wind_speed_100m, na.rm=TRUE) -
               min(wind_speed_100m, na.rm=TRUE),
+            wind_speed_diff = max(wind_speed, na.rm=TRUE) -
+              min(wind_speed, na.rm=TRUE),
             pressure_diff = max(pressure, na.rm=TRUE) -
               min(pressure, na.rm=TRUE),
             precipitation_diff = max(precipitation, na.rm=TRUE) - 
@@ -94,11 +112,13 @@ weather <- weather %>%
     Year = year(ts),
     Month = factor(month(ts)),
     Hour = factor(hour(ts)),
-    DoW = wday(ts, label=TRUE),
+    DoW = as.character(wday(ts, label=TRUE)),
     Weekend = ifelse(DoW %in% c("Sun", "Sat"), TRUE, FALSE),
-    DoW2 = ifelse(Weekend == TRUE, DoW, "Weekday"),
     DoY = yday(ts),
-    Date = floor_date(ts, "day")
+    Date = floor_date(ts, "day"),
+    Holiday = ifelse(Date %in% holidays$Date, TRUE, FALSE),
+    DoW2 = ifelse(Weekend == TRUE, DoW, "Weekday"),
+    DoW3 = ifelse(Holiday == TRUE, "Holiday", DoW2)
   )
 
 # Add hourly lags for weather variables
