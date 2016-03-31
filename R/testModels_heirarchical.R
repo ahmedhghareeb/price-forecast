@@ -37,7 +37,7 @@ maeSummary <- function (data,
 
 
 genHourPriceModel <- function(subDate) {
-  dataStart <- ymd("2016-02-12", tz="CET")
+  dataStart <- ymd("2016-02-12", tz="UTC")
   n_data <- round(as.numeric(subDate - dataStart))
   
   weather <- NULL
@@ -47,8 +47,8 @@ genHourPriceModel <- function(subDate) {
     weather_tmp <- read.csv(paste0("./data/FcstWeather/",
                                    strftime(weatherDate, "%Y-%m-%d"),
                                    "_06-00-00.csv")) %>% 
-      mutate(available_date = ymd_hms(available_date, tz="CET"),
-             prediction_date = ymd_hms(prediction_date, tz="CET")) %>% 
+      mutate(available_date = ymd_hms(available_date, tz="UTC"),
+             prediction_date = ymd_hms(prediction_date, tz="UTC")) %>% 
       rename(ts = prediction_date) %>% 
       filter(floor_date(ts, "day") == weatherDate + days(1)) %>% 
       select(-available_date)
@@ -73,10 +73,9 @@ genHourPriceModel <- function(subDate) {
       na.omit() %>% 
       mutate(Hour = as.numeric(str_extract(Hour, "[[:digit:]]+")) - 1,
              Price = as.numeric(str_replace(Price, ",", ".")),
-             # TODO: confused by this. Could be off by a day.
-             #ts = priceDate - days(1) + hours(Hour))
              ts = priceDate + hours(Hour)) %>% 
-      select(-Hour)
+      select(-Hour) %>% 
+      mutate(ts = ts - hours(1)) # convert from CET to UTC
     pricePT = bind_rows(pricePT, price_tmp)
   }
   
@@ -84,7 +83,7 @@ genHourPriceModel <- function(subDate) {
   holidays <- read.csv("./data/holidays.csv", header = F, 
                        col.names = c("Date", "Date2", "DoW", "Holiday",
                                      "Description", "Country")) %>% 
-    mutate(Date = dmy(Date, tz="CET")) %>% 
+    mutate(Date = dmy(Date, tz="UTC")) %>% 
     select(Date) %>% 
     distinct()
   
@@ -184,6 +183,7 @@ genHourPriceModel <- function(subDate) {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
+  mean(mae[1:8])
   
   #Midday models
   for (i in 8:15) {
@@ -197,6 +197,7 @@ genHourPriceModel <- function(subDate) {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
+  mean(mae[9:16])
   
   #Evening models
   for (i in 16:23) {
@@ -210,7 +211,7 @@ genHourPriceModel <- function(subDate) {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
-  
+  mean(mae[17:24])
   
   mean(mae)
   

@@ -15,7 +15,7 @@ require(lubridate)
 require(caret)
 require(splines)
 
-subDate <- ymd("2016-03-29", tz="CET")
+subDate <- ymd("2016-03-31", tz="UTC")
 
 #### Run model with latest data ===============================================
 source("./R/testModels_heirarchical.R")
@@ -29,7 +29,7 @@ weatherFcst <- read.csv(paste0("./data/FcstWeather/",
   mutate(available_date = ymd_hms(available_date),
          prediction_date = ymd_hms(prediction_date)) %>% 
   rename(ts = prediction_date) %>% 
-  filter(floor_date(ts, "day") == floor_date(with_tz(subDate, "UTC"), "day") + days(1))
+  filter(floor_date(ts, "day") == floor_date(subDate, "day"))
 weatherFcst <- read.csv(paste0("./data/FcstWeather/",
                                strftime(subDate, "%Y-%m-%d"),
                                "_06-00-00.csv")) %>% 
@@ -38,9 +38,10 @@ weatherFcst <- read.csv(paste0("./data/FcstWeather/",
   rename(ts = prediction_date) %>% 
   bind_rows(weatherFcst)
 
-# TODO: Not convinced that I am doing the lag properly. Might be out by one day.
-# Double check when I have a clear mind or eating spaghetti.
 
+#TODO: Need to account for daylight savings time. Also need to fix in
+#testModels_heirarchical.R
+#
 # Load last week of prices for lagged price variable
 pricesLastWeek <- NULL
 for(i in 6:0) {
@@ -57,8 +58,9 @@ for(i in 6:0) {
     na.omit() %>% 
     mutate(Hour = as.numeric(str_extract(Hour, "[[:digit:]]+")) - 1,
            Price = as.numeric(str_replace(Price, ",", ".")),
-           #ts = priceDate - days(1) + hours(Hour))
-           ts = priceDate + hours(Hour))
+           ts = priceDate + hours(Hour)) %>% 
+    select(-Hour) %>% 
+    mutate(ts = ts - hours(1)) # convert from CET to UTC
   pricesLastWeek = bind_rows(pricesLastWeek, price_tmp)
 }
 pricesLagged = pricesLastWeek %>% 
@@ -71,7 +73,7 @@ rm(pricesLastWeek)
 holidays <- read.csv("./data/holidays.csv", header = F, 
                      col.names = c("Date", "Date2", "DoW", "Holiday",
                                    "Description", "Country")) %>% 
-  mutate(Date = dmy(Date, tz="CET")) %>% 
+  mutate(Date = dmy(Date, tz="UTC")) %>% 
   select(Date) %>% 
   distinct()
 
@@ -156,7 +158,6 @@ price_pred <- price_pred %>%
   arrange(ts)
 
 
-#### UTC adjustment for CUT =================================================== 
 
 
 
@@ -206,24 +207,15 @@ if (FALSE) {
 }
 
 
-#### CUT daylight savings adjustment ==========================================
+#### CET daylight savings adjustment ==========================================
 #It seems as though I should be forecasting from 00:00 CET onwards (for 5 days),
 #but everything so far has been done in UTC
+
 price_pred <- price_pred %>% 
-  mutate(ts = with_tz(ts, tz="CET")) %>% 
-  select(-c(Date, Hour, DoY, DoW, DoW2, Weekend, Year, Month)) %>% 
-  filter(ts >= subDate + days(1),
-         ts < subDate + days(6))
+  mutate(ts = ts - hours(1)) %>% 
+  filter(ts < subDate + days(6) - hours(2))
 
-
-# Can now convert back to UTC
-price_pred <- price_pred %>% 
-  mutate(ts = with_tz(ts, tz="UTC"))
-
-
-#### Plots ====================================================================
 ggplot(price_pred, aes(x=ts, y=predictions)) + geom_line()
-
 
 
 #### Output ===================================================================
