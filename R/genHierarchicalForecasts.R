@@ -157,6 +157,56 @@ price_pred <- price_pred %>%
 
 
 #### UTC adjustment for CUT =================================================== 
+
+
+
+#### Checks ====================================================================
+
+if (FALSE) {
+  pred_test <- price_pred %>% select(ts, predictions)
+  
+  pricesFuture <- NULL
+  n_days_future <- 2
+  for(i in -n_days_future:0) {
+    priceDate = subDate-days(i)
+    priceFileName <- paste0("INT_PBC_EV_H_1_",
+                            strftime(priceDate, "%d_%m_%Y_"),
+                            strftime(priceDate, "%d_%m_%Y"),
+                            ".txt")
+    price_tmp <- read.csv(paste0("./data/PricesLastWeek/", priceFileName),
+                          skip=2, sep=";") %>% 
+      slice(2) %>% # 2nd row has portugal prices
+      select(-X) %>% 
+      gather(Hour, Price) %>% 
+      na.omit() %>% 
+      mutate(Hour = as.numeric(str_extract(Hour, "[[:digit:]]+")) - 1,
+             Price = as.numeric(str_replace(Price, ",", ".")),
+             ts = priceDate + hours(Hour)) %>% 
+      select(-Hour) %>% 
+      mutate(ts = ts - hours(1)) # convert from CET to UTC
+    pricesFuture = bind_rows(pricesFuture, price_tmp)
+  }
+  
+  pred_test %>% 
+    inner_join(pricesFuture) %>% 
+    mutate(Date = floor_date(ts, "day")) %>% 
+    mutate(ae = abs(predictions-Price)) %>% 
+    summarise(mean(ae))
+  pred_test %>% 
+    inner_join(pricesFuture) %>% 
+    mutate(Date = floor_date(ts, "day")) %>% 
+    mutate(ae = abs(predictions-Price)) %>% 
+    group_by(Date) %>% 
+    summarise(mean(ae))
+  pred_test %>% 
+    inner_join(pricesFuture) %>% 
+    gather(var, val, -ts) %>% 
+    ggplot(aes(x=ts, y=val, colour=var)) + 
+    geom_line()
+}
+
+
+#### CUT daylight savings adjustment ==========================================
 #It seems as though I should be forecasting from 00:00 CET onwards (for 5 days),
 #but everything so far has been done in UTC
 price_pred <- price_pred %>% 
