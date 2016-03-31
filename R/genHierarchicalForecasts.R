@@ -15,7 +15,7 @@ require(lubridate)
 require(caret)
 require(splines)
 
-subDate <- ymd("2016-03-30", tz="CET")
+subDate <- ymd("2016-03-29", tz="CET")
 
 #### Run model with latest data ===============================================
 source("./R/testModels_heirarchical.R")
@@ -57,7 +57,8 @@ for(i in 6:0) {
     na.omit() %>% 
     mutate(Hour = as.numeric(str_extract(Hour, "[[:digit:]]+")) - 1,
            Price = as.numeric(str_replace(Price, ",", ".")),
-           ts = priceDate - days(1) + hours(Hour))
+           #ts = priceDate - days(1) + hours(Hour))
+           ts = priceDate + hours(Hour))
   pricesLastWeek = bind_rows(pricesLastWeek, price_tmp)
 }
 pricesLagged = pricesLastWeek %>% 
