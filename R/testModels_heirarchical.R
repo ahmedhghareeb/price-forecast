@@ -170,10 +170,10 @@ genHourPriceModel <- function(subDate) {
     fixedWindow=FALSE,
     summaryFunction = maeSummary)
   
-  # TODO: Check which linear model tends to work best for individual hours
   model_h <- list()
   mae <- rep(NA, 24)
-  for (i in 0:23) {
+  # Morning models
+  for (i in 0:7) {
     cat(paste("Fitting hour", i, "...\n"))
     model_h[[i+1]] <- train(Price ~ Price_l168 + DoW3 + poly(wind_speed_mean, 2),
                             data = filter(price, Hour == i),
@@ -184,6 +184,34 @@ genHourPriceModel <- function(subDate) {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
+  
+  #Midday models
+  for (i in 8:15) {
+    cat(paste("Fitting hour", i, "...\n"))
+    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW3 + poly(wind_speed_mean, 2),
+                            data = filter(price, Hour == i),
+                            method="lm",
+                            metric="MAE",
+                            trControl = fitControl
+    )
+    mae[i+1] <- model_h[[i+1]]$results$MAE
+    print(model_h[[i+1]])
+  }
+  
+  #Evening models
+  for (i in 16:23) {
+    cat(paste("Fitting hour", i, "...\n"))
+    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW3 + poly(wind_speed_mean, 2),
+                            data = filter(price, Hour == i),
+                            method="lm",
+                            metric="MAE",
+                            trControl = fitControl
+    )
+    mae[i+1] <- model_h[[i+1]]$results$MAE
+    print(model_h[[i+1]])
+  }
+  
+  
   mean(mae)
   
   #### Evaluation metrics =======================================================
