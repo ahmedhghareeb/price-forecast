@@ -204,6 +204,18 @@ if (FALSE) {
     gather(var, val, -ts) %>% 
     ggplot(aes(x=ts, y=val, colour=var)) + 
     geom_line()
+  
+  
+  # Check problem periods against good periods
+  weather %>% 
+    filter(Hour %in% 1:4) %>% 
+    select(-c(ts, Year, Month, DoW, Weekend, DoY, Holiday, DoW2, DoW3)) %>% 
+    gather(var, val, -c(Hour, Date)) %>% 
+    ggplot(aes(x=Date, y=val, fill=factor(Hour))) + 
+    geom_boxplot() +
+    facet_wrap(~var, scales="free_y") +
+    scale_colour_discrete(name="Hour")
+  
 }
 
 
