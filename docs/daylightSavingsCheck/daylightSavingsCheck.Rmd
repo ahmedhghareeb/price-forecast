@@ -1,0 +1,88 @@
+---
+title: "Daylight savings check"
+author: "Cameron Roach"
+date: "3 April 2016"
+output: 
+  html_document: 
+    fig_height: 5
+    fig_width: 9
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list=ls())
+
+require(dplyr)
+require(tidyr)
+require(ggplot2)
+require(lubridate)
+
+
+```
+
+## R Markdown
+
+The Iberian price market shifts from Central European Time (CET), UTC+1 to Central European Savings Time (CEST), UTC+2 after March 27<sup>th</sup>. This is for daylight savings. Daylight saving time (DST) ends on October 30<sup>th</sup>. March 27<sup>th</sup> has 23 periods in the day and October 30<sup>th</sup> has 25.
+
+So far, my work has been focused on predicting price for UTC. I am interested in finding out if DST shifts the price profile an hour forward in UTC. This could be caused by activities/schedules of individuals and organisations being shifted forward by an hour, which will definitely have an impact on demand. If demand is affected, price may also be.
+
+
+```{r Load data}
+# Load data
+price <- read.csv("./../../data/HistData/price_PT.csv", sep=";") %>%
+  rename(ts = `date..UTC.`) %>%
+  mutate(ts = dmy_hm(ts))
+```
+
+Need to group the data into CET and CEST periods.
+
+```{r Assign DST periods}
+price <- price %>% 
+  mutate(DST = ifelse(between(ts, 
+                              dmy_hm("27/3/2015 22:00"), # 23:00 CET = 00:00 CEST = 22:00 UTC
+                              dmy_hm("31/10/2015 00:00")), # 01:00 CET = 02:00 CEST = 00:00 UTC
+                      TRUE, FALSE))
+```
+
+### Plots
+
+So let's check out some box-plots and a smoothed profile. See if we can detect a shift in the price profile. We will restrict our analysis to weekdays.
+
+```{r boxplot}
+price <- price %>% 
+  mutate(DoW = as.character(wday(ts, label=TRUE)),
+         Weekend = ifelse(DoW %in% c("Sun", "Sat"), TRUE, FALSE),
+         Hour = factor(hour(ts), levels=0:23, ordered=TRUE))
+
+
+price %>% 
+  filter(Weekend==FALSE) %>% 
+  ggplot(aes(x=Hour, y=Price, fill=DST)) +
+  geom_boxplot() +
+  facet_wrap(~DST, ncol=1, scales="free_y") +
+  ggtitle("Hourly boxplots of price during DST and non-DST periods for 2015.")
+```
+
+The box-plot shows that the peak median occurs at 19:00 during DST and 18:00 during non-DST. There is a different profile shape, but this is likely caused by differing weather conditions rather than DST. I only expect DST to shift a profile.
+
+It's a little bit difficult to determine if there is a consistent shift. Plotting smoothed profiles against each other should help to clear this up.
+
+```{r smoother}
+price %>% 
+  filter(Weekend==FALSE) %>% 
+  ggplot(aes(x=as.numeric(Hour), y=Price, colour=DST)) +
+  geom_smooth() +
+  xlab("Hour") +
+  scale_x_continuous(minor_breaks = 0:24) +
+  ggtitle("Smoothed price profiles during DST and non-DST periods for 2015.")
+```
+
+Looking at the smoothed profile it appears as though no shift has occurred. Taking the confidence intervals into account it seems as though any shift would not be statistically significant anyway.
+
+
+## Conclusion
+
+Since there doesn't appear to be any shift all prices should be converted from CET or CEST to UTC. Modelling can be done as per normal.
+
+The dramatic change in profile may be caused by weather changes between DST and non-DST times of the year. However, there may also be some behavioural changes caused by DST. This may indicate that a rolling window should be used for training the model.
