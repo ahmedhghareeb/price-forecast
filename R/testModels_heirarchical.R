@@ -75,7 +75,14 @@ genHourPriceModel <- function(subDate) {
              Price = as.numeric(str_replace(Price, ",", ".")),
              ts = priceDate + hours(Hour)) %>% 
       select(-Hour) %>% 
-      mutate(ts = ts - hours(1)) # convert from CET to UTC
+      #TODO: Hardcoded year as 2016 for DST fix. Create set of days and months
+      #instead.
+      mutate(ts = ifelse(between(floor_date(ts, "day"), 
+                                 dmy("28/3/2016"), 
+                                 dmy("30/10/2016")),
+                         ts - hours(2), # convert from CEST to UTC
+                         ts - hours(1)), # convert from CET to UTC
+             ts = as.POSIXct(ts, origin="1970-01-01", tz="UTC"))
     pricePT = bind_rows(pricePT, price_tmp)
   }
   
