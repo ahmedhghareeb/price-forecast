@@ -36,9 +36,14 @@ maeSummary <- function (data,
 #   mutate(ts = dmy_hm(ts))
 
 
-genHourPriceModel <- function(subDate) {
+genHourPriceModel <- function(subDate, n_data = "All") {
   dataStart <- ymd("2016-02-12", tz="UTC")
-  n_data <- round(as.numeric(subDate - dataStart))
+  if(n_data == "All") {
+    n_data <- round(as.numeric(subDate - dataStart))
+  } else {
+    n_data <- as.numeric(n_data)
+  }
+  
   
   weather <- NULL
   for(i in n_data:0) {
@@ -171,7 +176,7 @@ genHourPriceModel <- function(subDate) {
   #### Fit models ===============================================================
   fitControl <- trainControl(
     method = "timeslice",
-    initialWindow = 20,
+    initialWindow = ceiling(n_data*0.7),
     horizon=5,
     fixedWindow=FALSE,
     summaryFunction = maeSummary)
