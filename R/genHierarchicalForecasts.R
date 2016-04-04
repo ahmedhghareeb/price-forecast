@@ -226,7 +226,7 @@ if (FALSE) {
     summarise(mean(ae))
   pred_test %>% 
     inner_join(pricesFuture) %>% 
-    mutate(Date = floor_date(ts, "day")) %>% 
+    mutate(Date = floor_date(ts + hours(2), "day")) %>% # CEST
     mutate(ae = abs(predictions-Price)) %>% 
     group_by(Date) %>% 
     summarise(mean(ae), n())
