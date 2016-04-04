@@ -217,9 +217,10 @@ if (FALSE) {
     mutate(Date = floor_date(ts, "day")) %>% 
     mutate(ae = abs(predictions-Price)) %>% 
     group_by(Date) %>% 
-    summarise(mean(ae))
+    summarise(mean(ae), n())
   pred_test %>% 
     inner_join(pricesFuture) %>% 
+    mutate(error = predictions-Price) %>% 
     gather(var, val, -ts) %>% 
     ggplot(aes(x=ts, y=val, colour=var)) + 
     geom_line()
