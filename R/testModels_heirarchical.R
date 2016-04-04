@@ -203,8 +203,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
   #Midday models
   for (i in 6:12) {
     cat(paste("Fitting hour", i, "...\n"))
-    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW3 + poly(wind_speed_mean, 2) +
-                              temperature_mean,
+    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW3 + poly(wind_speed_mean, 2),
                             data = filter(price, Hour == i),
                             method="lm",
                             metric="MAE",
