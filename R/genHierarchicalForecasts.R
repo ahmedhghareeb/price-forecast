@@ -20,7 +20,7 @@ require(lubridate)
 require(caret)
 require(splines)
 
-subDate <- ymd("2016-03-31", tz="UTC")
+subDate <- ymd("2016-04-04", tz="UTC")
 
 #### Run model with latest data ===============================================
 source("./R/testModels_heirarchical.R")
