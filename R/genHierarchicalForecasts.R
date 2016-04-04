@@ -1,9 +1,14 @@
-# Name: Generate hierarchical forecasts
-# 
-# Description: Script generates forecasts using daily weather data files and
-# hierarchical model produced by testModels_heirrchical.R.
-# 
-# Author: Cameron Roach
+#Name: Generate hierarchical forecasts
+#
+#Description: Script generates forecasts using daily weather data files and 
+#hierarchical model produced by testModels_heirrchical.R.
+#
+#Author: Cameron Roach
+#
+#TODO: Shift all data loading chunks into functions. Multiple instances of the 
+#same bit of code is sometimes causing errors because they aren't all
+#updated/consistent.
+
 
 rm(list=ls())
 
@@ -44,7 +49,7 @@ weatherFcst <- read.csv(paste0("./data/FcstWeather/",
 #
 # Load last week of prices for lagged price variable
 pricesLastWeek <- NULL
-for(i in 6:0) {
+for(i in 7:0) {
   priceDate = subDate-days(i)
   priceFileName <- paste0("INT_PBC_EV_H_1_",
                           strftime(priceDate, "%d_%m_%Y_"),
@@ -191,7 +196,14 @@ if (FALSE) {
              Price = as.numeric(str_replace(Price, ",", ".")),
              ts = priceDate + hours(Hour)) %>% 
       select(-Hour) %>% 
-      mutate(ts = ts - hours(1)) # convert from CET to UTC
+      #TODO: Hardcoded year as 2016 for DST fix. Create set of days and months
+      #instead.
+      mutate(ts = ifelse(between(floor_date(ts, "day"), 
+                                 dmy("28/3/2016"), 
+                                 dmy("30/10/2016")),
+                         ts - hours(2), # convert from CEST to UTC
+                         ts - hours(1)), # convert from CET to UTC
+             ts = as.POSIXct(ts, origin="1970-01-01", tz="UTC"))
     pricesFuture = bind_rows(pricesFuture, price_tmp)
   }
   
