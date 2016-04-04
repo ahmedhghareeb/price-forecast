@@ -191,7 +191,7 @@ if (FALSE) {
   pred_test <- price_pred %>% select(ts, predictions)
   
   pricesFuture <- NULL
-  n_days_future <- 2
+  n_days_future <- 1
   for(i in -n_days_future:0) {
     priceDate = subDate-days(i)
     priceFileName <- paste0("INT_PBC_EV_H_1_",
