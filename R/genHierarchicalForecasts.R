@@ -44,9 +44,6 @@ weatherFcst <- read.csv(paste0("./data/FcstWeather/",
   bind_rows(weatherFcst)
 
 
-#TODO: Need to account for daylight savings time. Also need to fix in
-#testModels_heirarchical.R
-#
 # Load last week of prices for lagged price variable
 pricesLastWeek <- NULL
 for(i in 7:0) {
