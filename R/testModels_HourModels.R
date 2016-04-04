@@ -1,4 +1,4 @@
-# Name: testModels_heirarchical
+# Name: Test hourly price models
 # 
 # Description: This script is a conversion of the testModels.py script for R.
 # Fits a seperate model for each hour of day.
@@ -198,7 +198,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
-  mean(mae[1:6]) #3.363557
+  mean(mae[1:6]) #4.307052
   
   #Midday models
   for (i in 6:12) {
@@ -212,7 +212,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
-  mean(mae[7:13]) #4.001256
+  mean(mae[7:13]) #4.166916
   
   #Evening models
   for (i in 13:23) {
@@ -226,7 +226,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
-  mean(mae[14:24]) # 3.25165
+  mean(mae[14:24]) # 3.5608
   
   print(paste0("MAE during morning: ", mean(mae[1:6])))
   print(paste0("MAE during midday: ", mean(mae[7:13])))

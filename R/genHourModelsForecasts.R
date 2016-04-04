@@ -1,7 +1,7 @@
-#Name: Generate hierarchical forecasts
+#Name: Generate hourly model forecasts
 #
 #Description: Script generates forecasts using daily weather data files and 
-#hierarchical model produced by testModels_heirrchical.R.
+#hourly price models produced by testModels_HourModels.R.
 #
 #Author: Cameron Roach
 #
@@ -23,7 +23,7 @@ require(splines)
 subDate <- ymd("2016-04-04", tz="UTC")
 
 #### Run model with latest data ===============================================
-source("./R/testModels_heirarchical.R")
+source("./R/testModels_HourModels.R")
 finalModel <- genHourPriceModel(subDate)
 
 #### Load data ================================================================
