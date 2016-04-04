@@ -187,10 +187,9 @@ genHourPriceModel <- function(subDate, n_data = "All") {
   model_h <- list()
   mae <- rep(NA, 24)
   # Morning models
-  for (i in 0:3) {
+  for (i in 0:5) {
     cat(paste("Fitting hour", i, "...\n"))
-    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW3 + poly(wind_speed_mean, 2) +
-                              temperature_sd,
+    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW3 + poly(wind_speed_mean, 2),
                             data = filter(price, Hour == i),
                             method="lm",
                             metric="MAE",
@@ -199,12 +198,13 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
-  mean(mae[1:4]) #4.78 #4.6323
+  mean(mae[1:6]) #3.363557
   
   #Midday models
-  for (i in 4:15) {
+  for (i in 6:12) {
     cat(paste("Fitting hour", i, "...\n"))
-    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW3 + poly(wind_speed_mean, 2),
+    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW3 + poly(wind_speed_mean, 2) +
+                              temperature_mean,
                             data = filter(price, Hour == i),
                             method="lm",
                             metric="MAE",
@@ -213,10 +213,10 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
-  mean(mae[5:16])
+  mean(mae[7:13]) #4.001256
   
   #Evening models
-  for (i in 16:23) {
+  for (i in 13:23) {
     cat(paste("Fitting hour", i, "...\n"))
     model_h[[i+1]] <- train(Price ~ Price_l168 + DoW3 + poly(wind_speed_mean, 2),
                             data = filter(price, Hour == i),
@@ -227,11 +227,11 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
-  mean(mae[17:24])
+  mean(mae[14:24]) # 3.25165
   
-  print(paste0("MAE during morning: ", mean(mae[1:8])))
-  print(paste0("MAE during midday: ", mean(mae[9:16])))
-  print(paste0("MAE during evening: ", mean(mae[17:24])))
+  print(paste0("MAE during morning: ", mean(mae[1:6])))
+  print(paste0("MAE during midday: ", mean(mae[7:13])))
+  print(paste0("MAE during evening: ", mean(mae[14:24])))
   print(paste0("Daily MAE: ", mean(mae)))
   
   #### Evaluation metrics =======================================================
