@@ -171,6 +171,18 @@ price_pred <- price_pred %>%
 
 
 
+#### Filter for forecast period ===============================================
+#It seems as though I should be forecasting from 00:00 CET onwards (for 5 days),
+#but everything so far has been done in UTC
+
+price_pred <- price_pred %>% 
+  filter(ts < subDate + days(6) - hours(2),
+         ts >= subDate + days(1) - hours(2))
+
+ggplot(price_pred, aes(x=ts, y=predictions)) + 
+  geom_line()
+
+
 
 
 #### Checks ====================================================================
@@ -239,15 +251,6 @@ if (FALSE) {
 }
 
 
-#### CET daylight savings adjustment ==========================================
-#It seems as though I should be forecasting from 00:00 CET onwards (for 5 days),
-#but everything so far has been done in UTC
-
-price_pred <- price_pred %>% 
-  mutate(ts = ts - hours(1)) %>% 
-  filter(ts < subDate + days(6) - hours(2))
-
-ggplot(price_pred, aes(x=ts, y=predictions)) + geom_line()
 
 
 #### Output ===================================================================
