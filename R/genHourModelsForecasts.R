@@ -130,7 +130,9 @@ weather <- weather %>%
     Date = floor_date(ts, "day"),
     Holiday = ifelse(Date %in% holidays$Date, TRUE, FALSE),
     DoW2 = ifelse(Weekend == TRUE, DoW, "Weekday"),
-    DoW3 = ifelse(Holiday == TRUE, "Holiday", DoW2)
+    DoW3 = ifelse(Holiday == TRUE, "Holiday", DoW2),
+    DoW4 = ifelse(Weekend == TRUE, "Weekend",
+                  ifelse(Holiday == TRUE, "Holiday", "Weekday"))
   )
 
 # Add hourly lags for weather variables

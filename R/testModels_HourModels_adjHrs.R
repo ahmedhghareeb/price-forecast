@@ -147,7 +147,9 @@ genHourPriceModel <- function(subDate, n_data = "All") {
       Date = floor_date(ts, "day"),
       Holiday = ifelse(Date %in% holidays$Date, TRUE, FALSE),
       DoW2 = ifelse(Weekend == TRUE, DoW, "Weekday"),
-      DoW3 = ifelse(Holiday == TRUE, "Holiday", DoW2)
+      DoW3 = ifelse(Holiday == TRUE, "Holiday", DoW2),
+      DoW4 = ifelse(Weekend == TRUE, "Weekend",
+                    ifelse(Holiday == TRUE, "Holiday", "Weekday"))
     )
   
   # Add hourly lags for weather variables
@@ -193,7 +195,8 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     hour_subset <- c(i-1, i, i+1)
     hour_subset[hour_subset==-1] <- 23
     
-    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW3 + poly(wind_speed_mean, 2),
+    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW4 + poly(wind_speed_mean, 2) +
+                              temperature_sd,
                             data = filter(price, Hour %in% hour_subset),
                             method="lm",
                             metric="MAE",
@@ -202,7 +205,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
-  mean(mae[1:6]) #4.307052
+  mean(mae[1:6]) #4.037
   
   #Midday models
   for (i in 6:12) {
@@ -210,7 +213,8 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     
     hour_subset <- c(i-1, i, i+1)
     
-    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW3 + poly(wind_speed_mean, 2),
+    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW4 + poly(wind_speed_mean, 2) +
+                              wind_speed_sd,
                             data = filter(price, Hour %in% hour_subset),
                             method="lm",
                             metric="MAE",
@@ -219,7 +223,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
-  mean(mae[7:13]) #4.166916
+  mean(mae[7:13]) # 4.433596
   
   #Evening models
   for (i in 13:23) {
@@ -228,7 +232,8 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     hour_subset <- c(i-1, i, i+1)
     hour_subset[hour_subset==24] <- 0
     
-    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW3 + poly(wind_speed_mean, 2),
+    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW4 + poly(wind_speed_mean, 2) +
+                              wind_speed_sd,
                             data = filter(price, Hour %in% hour_subset),
                             method="lm",
                             metric="MAE",
@@ -237,7 +242,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
-  mean(mae[14:24]) # 3.5608
+  mean(mae[14:24]) # 4.888828
   
   print(paste0("MAE during morning: ", mean(mae[1:6])))
   print(paste0("MAE during midday: ", mean(mae[7:13])))
