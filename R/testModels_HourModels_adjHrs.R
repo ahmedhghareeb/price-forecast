@@ -189,11 +189,12 @@ genHourPriceModel <- function(subDate, n_data = "All") {
   model_h <- list()
   mae <- rep(NA, 24)
   # Morning models
-  for (i in 0:5) {
+  for (i in c(0:5, 20:23)) {
     cat(paste("Fitting hour", i, "...\n"))
     
     hour_subset <- c(i-1, i, i+1)
     hour_subset[hour_subset==-1] <- 23
+    hour_subset[hour_subset==24] <- 0
     
     model_h[[i+1]] <- train(Price ~ Price_l168 + DoW4 + poly(wind_speed_mean, 2) +
                               temperature_sd,
@@ -205,7 +206,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
-  mean(mae[1:6]) #4.037
+  mean(mae[c(0:5, 20:23) + 1]) #4.037
   
   #Midday models
   for (i in 6:12) {
@@ -223,14 +224,13 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
-  mean(mae[7:13]) # 4.433596
+  mean(mae[6:12 + 1]) # 4.433596
   
   #Evening models
-  for (i in 13:23) {
+  for (i in 13:19) {
     cat(paste("Fitting hour", i, "...\n"))
     
     hour_subset <- c(i-1, i, i+1)
-    hour_subset[hour_subset==24] <- 0
     
     model_h[[i+1]] <- train(Price ~ Price_l168 + DoW4 + poly(wind_speed_mean, 2) +
                               wind_speed_sd,
@@ -242,11 +242,11 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
-  mean(mae[14:24]) # 4.888828
+  mean(mae[13:19 + 1]) # 4.888828
   
-  print(paste0("MAE during morning: ", mean(mae[1:6])))
-  print(paste0("MAE during midday: ", mean(mae[7:13])))
-  print(paste0("MAE during evening: ", mean(mae[14:24])))
+  print(paste0("MAE during night: ", mean(mae[c(0:5, 20:23) + 1])))
+  print(paste0("MAE during midday: ", mean(mae[6:12 + 1])))
+  print(paste0("MAE during evening: ", mean(mae[13:19 + 1])))
   print(paste0("Daily MAE: ", mean(mae)))
   
   #### Evaluation metrics =======================================================
