@@ -23,7 +23,7 @@ require(splines)
 subDate <- ymd("2016-04-04", tz="UTC")
 
 #### Run model with latest data ===============================================
-source("./R/testModels_HourModels.R")
+source("./R/testModels_HourModels_adjHrs.R")
 finalModel <- genHourPriceModel(subDate)
 
 #### Load data ================================================================
