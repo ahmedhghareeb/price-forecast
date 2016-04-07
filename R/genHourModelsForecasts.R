@@ -20,10 +20,10 @@ require(lubridate)
 require(caret)
 require(splines)
 
-subDate <- ymd("2016-04-06", tz="UTC")
+subDate <- ymd("2016-04-07", tz="UTC")
 
 #### Run model with latest data ===============================================
-source("./R/testModels_HourModels.R")
+source("./R/testModels_HourModels_adjHrs.R")
 finalModel <- genHourPriceModel(subDate)
 
 #### Load data ================================================================
@@ -130,7 +130,9 @@ weather <- weather %>%
     Date = floor_date(ts, "day"),
     Holiday = ifelse(Date %in% holidays$Date, TRUE, FALSE),
     DoW2 = ifelse(Weekend == TRUE, DoW, "Weekday"),
-    DoW3 = ifelse(Holiday == TRUE, "Holiday", DoW2)
+    DoW3 = ifelse(Holiday == TRUE, "Holiday", DoW2),
+    DoW4 = ifelse(Weekend == TRUE, "Weekend",
+                  ifelse(Holiday == TRUE, "Holiday", "Weekday"))
   )
 
 # Add hourly lags for weather variables
