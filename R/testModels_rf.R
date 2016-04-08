@@ -14,6 +14,7 @@ require(stringr)
 require(lubridate)
 require(caret)
 require(splines)
+require(doMC)
 
 
 
@@ -184,77 +185,44 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     method = "timeslice",
     initialWindow = ceiling(n_data*0.7),
     horizon=5,
-    fixedWindow=FALSE)
+    fixedWindow=FALSE,
+    summaryFunction = maeSummary)
+  
+  #Parallel processing
+  registerDoMC(cores = 4)
   
   model_h <- list()
   mae <- rep(NA, 24)
   # Morning models
-  for (i in c(0:5, 20:23)) {
+  for (i in 0:23) {
     cat(paste("Fitting hour", i, "...\n"))
     
     hour_subset <- c(i-1, i, i+1)
     hour_subset[hour_subset==-1] <- 23
     hour_subset[hour_subset==24] <- 0
     
-    model_h[[i+1]] <- train(Price ~ . - Weekend - DoY - Date - ts - Year - 
-                              Month - DoW2 - DoW3 - DoW4 - Hour - 
-                              wind_speed_100m_mean - 
-                              wind_speed_100m_sd, 
-                            data = filter(price, Hour %in% hour_subset), 
+    model_h[[i+1]] <- train(Price ~ ., 
+                            data = price %>% 
+                              filter(Hour %in% hour_subset) %>% 
+                              select(Price, Price_l168, DoW, Holiday, 
+                                     wind_speed_mean, wind_speed_sd, 
+                                     temperature_mean, temperature_sd), 
                             method="rf", 
+                            metric="MAE",
                             trControl = fitControl,
+                            maximize = FALSE,
                             importance = TRUE,
                             verbose = TRUE)
-    #mae[i+1] <- model_h[[i+1]]$results$MAE
+    mae[i+1] <- with(model_h[[i+1]], 
+                     results$MAE[results$mtry == bestTune$mtry])
     print(model_h[[i+1]])
   }
-  #mean(mae[c(0:5, 20:23) + 1]) #4.037
   
-  #Midday models
-  for (i in 6:12) {
-    cat(paste("Fitting hour", i, "...\n"))
-    
-    hour_subset <- c(i-1, i, i+1)
-    
-    model_h[[i+1]] <- train(Price ~ . - Weekend - DoY - Date - ts - Year - 
-                              Month - DoW2 - DoW3 - DoW4 - Hour - 
-                              wind_speed_100m_mean - 
-                              wind_speed_100m_sd, 
-                            data = filter(price, Hour %in% hour_subset), 
-                            method="rf", 
-                            trControl = fitControl,
-                            importance = TRUE,
-                            verbose = TRUE)
-    #mae[i+1] <- model_h[[i+1]]$results$MAE
-    print(model_h[[i+1]])
-  }
-  #mean(mae[6:12 + 1]) # 4.433596
-  
-  #Evening models
-  for (i in 13:19) {
-    cat(paste("Fitting hour", i, "...\n"))
-    
-    hour_subset <- c(i-1, i, i+1)
-    
-    model_h[[i+1]] <-train(Price ~ . - Weekend - DoY - Date - ts - Year - 
-                             Month - DoW2 - DoW3 - DoW4 - Hour - 
-                             wind_speed_100m_mean - 
-                             wind_speed_100m_sd, 
-                           data = filter(price, Hour %in% hour_subset), 
-                           method="rf", 
-                           trControl = fitControl,
-                           importance = TRUE,
-                           verbose = TRUE)
-    #mae[i+1] <- model_h[[i+1]]$results$MAE
-    print(model_h[[i+1]])
-  }
-  #mean(mae[13:19 + 1]) # 4.888828
-  
-  # print(paste0("MAE during night: ", mean(mae[c(0:5, 20:23) + 1])))
-  # print(paste0("MAE during midday: ", mean(mae[6:12 + 1])))
-  # print(paste0("MAE during evening: ", mean(mae[13:19 + 1])))
-  # print(paste0("Daily MAE: ", mean(mae)))
-  # 
+  print(paste0("MAE during night: ", mean(mae[c(0:5, 20:23) + 1])))
+  print(paste0("MAE during midday: ", mean(mae[6:12 + 1])))
+  print(paste0("MAE during evening: ", mean(mae[13:19 + 1])))
+  print(paste0("Daily MAE: ", mean(mae)))
+
   #### Evaluation metrics =======================================================
   price_pred <- NULL
   for (i in 0:23) {
