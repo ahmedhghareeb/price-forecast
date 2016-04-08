@@ -111,11 +111,13 @@ genHourPriceModel <- function(subDate, n_data = "All") {
               wind_speed_mean = mean(wind_speed, na.rm=TRUE),
               pressure_mean = mean(pressure, na.rm=TRUE),
               precipitation_mean = mean(precipitation, na.rm=TRUE),
+              radiation_mean = mean(radiation, na.rm=TRUE),
               temperature_sd = sd(temperature, na.rm=TRUE),
               wind_speed_100m_sd = sd(wind_speed_100m, na.rm=TRUE),
               wind_speed_sd = sd(wind_speed, na.rm=TRUE),
               pressure_sd = sd(pressure, na.rm=TRUE),
               precipitation_sd = sd(precipitation, na.rm=TRUE),
+              radiation_sd = sd(radiation, na.rm=TRUE),
               temperature_diff = max(temperature, na.rm=TRUE) - 
                 min(temperature, na.rm=TRUE),
               wind_speed_100m_diff = max(wind_speed_100m, na.rm=TRUE) -
@@ -125,7 +127,9 @@ genHourPriceModel <- function(subDate, n_data = "All") {
               pressure_diff = max(pressure, na.rm=TRUE) -
                 min(pressure, na.rm=TRUE),
               precipitation_diff = max(precipitation, na.rm=TRUE) - 
-                min(precipitation, na.rm=TRUE)) %>% 
+                min(precipitation, na.rm=TRUE),
+              radiation_diff = max(radiation, na.rm=TRUE) - 
+                min(radiation, na.rm=TRUE)) %>% 
     gather(WeatherVar, Measurement, -c(ts)) %>% 
     unite(temp, WeatherVar) %>% 
     spread(temp, Measurement) %>% 
@@ -205,8 +209,8 @@ genHourPriceModel <- function(subDate, n_data = "All") {
                             data = filter(price, Hour %in% hour_subset),
                             method="lm",
                             metric="MAE",
-                            trControl = fitControl
-    )
+                            maximize = FALSE,
+                            trControl = fitControl)
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
@@ -223,8 +227,8 @@ genHourPriceModel <- function(subDate, n_data = "All") {
                             data = filter(price, Hour %in% hour_subset),
                             method="lm",
                             metric="MAE",
-                            trControl = fitControl
-    )
+                            maximize = FALSE,
+                            trControl = fitControl)
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
@@ -241,8 +245,8 @@ genHourPriceModel <- function(subDate, n_data = "All") {
                             data = filter(price, Hour %in% hour_subset),
                             method="lm",
                             metric="MAE",
-                            trControl = fitControl
-    )
+                            maximize = FALSE,
+                            trControl = fitControl)
     mae[i+1] <- model_h[[i+1]]$results$MAE
     print(model_h[[i+1]])
   }
