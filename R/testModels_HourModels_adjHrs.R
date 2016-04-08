@@ -173,7 +173,11 @@ genHourPriceModel <- function(subDate, n_data = "All") {
                                Price_l168),
            Price_l169 = lag(Price, 169),
            Price_l169 = ifelse(is.na(Price_l169), Price, 
-                               Price_l169)
+                               Price_l169),
+           Price_l336 = lag(Price, 336),
+           Price_l336 = ifelse(is.na(Price_l336), Price, 
+                               Price_l336),
+           Price_mean_2w = (Price_l169 + Price_l336)/2
     )
   
   
