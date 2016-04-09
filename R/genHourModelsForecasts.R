@@ -20,7 +20,7 @@ require(lubridate)
 require(caret)
 require(splines)
 
-subDate <- ymd("2016-04-08", tz="UTC")
+subDate <- ymd("2016-04-09", tz="UTC")
 
 #### Run model with latest data ===============================================
 source("./R/testModels_HourModels_adjHrs.R")
@@ -266,3 +266,4 @@ filename = paste0("1639e1334b2ec40805be8dedc132764d_",
                   strftime(subDate, "%Y-%m-%d"))
 write.csv(outputForecasts, file = paste0("./cache/", filename, ".csv"),
           row.names=F, quote=F)
+save(outputForecasts, file = paste0("./cache/5_day_", filename, ".RData"))
