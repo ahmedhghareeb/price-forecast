@@ -315,11 +315,13 @@ genHourPriceModel <- function(subDate, n_data = "All") {
   for(i in unique(months(price_pred$ts))) {
     p <- price_pred %>% 
       filter(month(ts, label=T, abbr=F)==i) %>% 
-      select(ts, Price, Price_h, r_h) %>% 
-      gather(var, value, -ts) %>% 
+      select(ts, Price, Price_h, r_h, Weekend) %>% 
+      gather(var, value, -c(ts, Weekend)) %>% 
       ggplot(aes(x=ts, y=value, colour=var)) +
       geom_line() +
-      ggtitle(paste("Price actuals and predictions for", i, "2015"))
+      ggtitle(paste("Price actuals and predictions for", i, "2015")) +
+      geom_vline(aes(xintercept = as.numeric(ts), colour = Weekend),
+                 alpha=0.05, size=2)
     print(p)
   }
   
