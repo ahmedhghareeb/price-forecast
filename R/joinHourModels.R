@@ -1,3 +1,8 @@
+require(dplyr)
+require(lubridate)
+require(ggplot2)
+require(tidyr)
+
 source("./R/genHourModelsForecasts.R")
 source("./R/genHourModelsForecasts_1day.R")
 
