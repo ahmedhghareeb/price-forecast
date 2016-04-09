@@ -1,8 +1,8 @@
 # Name: Test hourly price models
 # 
-# Description: This script is a conversion of the testModels.py script for R.
-# Fits a seperate model for each hour of day.
-#
+# Description: Fits a seperate price model for each hour of day. Uses adjacent
+# hours when training for each hour to increase amount of data.
+# 
 # Author: Cameron Roach
 
 
@@ -27,15 +27,6 @@ maeSummary <- function (data,
 }
 
 #### Load data ================================================================
-#Load and transform data
-# pricePT_old = read.csv("./data/HistData/price_PT.csv", sep=";") %>% 
-#   rename(ts = `date..UTC.`) %>% 
-#   mutate(ts = dmy_hm(ts))
-# weather_old = read.csv("./data/HistWeather/weather_hist.csv") %>% 
-#   rename(ts = prediction_date) %>% 
-#   mutate(ts = dmy_hm(ts))
-
-
 genHourPriceModel <- function(subDate, n_data = "All") {
   dataStart <- ymd("2016-02-12", tz="UTC")
   if(n_data == "All") {
@@ -289,5 +280,3 @@ genHourPriceModel <- function(subDate, n_data = "All") {
   
   return(finalModel)
 }
-#dir.create("./cache", F, T)
-#save(finalModel, file="./cache/HierarchicalModel.RData")
