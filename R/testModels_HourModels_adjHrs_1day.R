@@ -193,7 +193,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
   #### Fit models ===============================================================
   fitControl <- trainControl(
     method = "timeslice",
-    initialWindow = ceiling(n_data*0.7),
+    initialWindow = ceiling(n_data*0.7)*3, #3 observations in each hour
     horizon=1,
     fixedWindow=FALSE,
     summaryFunction = maeSummary)
