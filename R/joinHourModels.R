@@ -1,3 +1,5 @@
+rm(list=ls())
+
 require(dplyr)
 require(lubridate)
 require(ggplot2)
@@ -8,7 +10,7 @@ source("./R/genHourModelsForecasts_1day.R")
 
 rm(list=ls())
 
-subDate <- ymd("2016-04-09", tz="UTC")
+subDate <- ymd("2016-04-10", tz="UTC")
 
 
 
