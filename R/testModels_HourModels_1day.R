@@ -1,8 +1,8 @@
 # Name: Test hourly price models
 # 
-# Description: This script is a conversion of the testModels.py script for R.
-# Fits a seperate model for each hour of day.
-#
+# Description: Fits a seperate price model for each hour of day. 1-day ahead
+# forecast.
+# 
 # Author: Cameron Roach
 
 
@@ -160,6 +160,15 @@ genHourPriceModel <- function(subDate, n_data = "All") {
            temperature_mean_l24 = lag(temperature_mean, 24),
            temperature_mean_l24 = ifelse(is.na(temperature_mean_l2), temperature_mean, 
                                          temperature_mean_l2),
+           Price_l1 = lag(Price, 1),
+           Price_l1 = ifelse(is.na(Price_l1), Price, 
+                             Price_l1),
+           Price_l2 = lag(Price, 2),
+           Price_l2 = ifelse(is.na(Price_l2), Price, 
+                             Price_l2),
+           Price_l3 = lag(Price, 3),
+           Price_l3 = ifelse(is.na(Price_l3), Price, 
+                             Price_l3),
            Price_l24 = lag(Price, 24),
            Price_l24 = ifelse(is.na(Price_l24), Price, 
                               Price_l24),
@@ -169,10 +178,14 @@ genHourPriceModel <- function(subDate, n_data = "All") {
            Price_l169 = lag(Price, 169),
            Price_l169 = ifelse(is.na(Price_l169), Price, 
                                Price_l169),
+           Price_l192 = lag(Price, 192),
+           Price_l192 = ifelse(is.na(Price_l192), Price, 
+                               Price_l192),
            Price_l336 = lag(Price, 336),
            Price_l336 = ifelse(is.na(Price_l336), Price, 
                                Price_l336),
-           Price_mean_2w = (Price_l169 + Price_l336)/2
+           Price_mean_2w = (Price_l169 + Price_l336)/2,
+           Price_d24_192 = Price_l24 - Price_l192
     )
   
   
@@ -182,14 +195,15 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     method = "timeslice",
     #initialWindow = ceiling(n_data*0.7)*3, #3 observations in each hour
     initialWindow = ceiling(n_data*0.7),
-    horizon=5,
+    horizon=1,
     fixedWindow=FALSE,
     summaryFunction = maeSummary)
   
   model_h <- list()
   mae <- rep(NA, 24)
-  # Morning models
-  for (i in c(0:5, 20:23)) {
+  
+  # First two hours will be close to last observed value
+  for (i in c(22,23,0)) {
     cat(paste("Fitting hour", i, "...\n"))
     
     # hour_subset <- c(i-1, i, i+1)
@@ -197,7 +211,44 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     # hour_subset[hour_subset==24] <- 0
     hour_subset <- i
     
-    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW4 + poly(wind_speed_mean, 2) +
+    if (i == 22) {
+      model_h[[i+1]] <- train(Price ~ Price_l1,
+                              data = filter(price, Hour %in% hour_subset),
+                              method="lm",
+                              metric="MAE",
+                              maximize = FALSE,
+                              trControl = fitControl)
+      
+    } else if (i==23) {
+      model_h[[i+1]] <- train(Price ~ Price_l2,
+                              data = filter(price, Hour %in% hour_subset),
+                              method="lm",
+                              metric="MAE",
+                              maximize = FALSE,
+                              trControl = fitControl)
+    } else if (i==0) {
+      model_h[[i+1]] <- train(Price ~ Price_l3,
+                              data = filter(price, Hour %in% hour_subset),
+                              method="lm",
+                              metric="MAE",
+                              maximize = FALSE,
+                              trControl = fitControl)
+    }
+    mae[i+1] <- model_h[[i+1]]$results$MAE
+    print(model_h[[i+1]])
+  }
+  
+  
+  # Morning models
+  for (i in c(1:5, 20:21)) {
+    cat(paste("Fitting hour", i, "...\n"))
+    
+    # hour_subset <- c(i-1, i, i+1)
+    # hour_subset[hour_subset==-1] <- 23
+    # hour_subset[hour_subset==24] <- 0
+    hour_subset <- i
+    
+    model_h[[i+1]] <- train(Price ~ Price_l24 + DoW4 + poly(wind_speed_mean, 2, raw = TRUE) +
                               temperature_sd,
                             data = filter(price, Hour %in% hour_subset),
                             method="lm",
@@ -216,7 +267,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     #hour_subset <- c(i-1, i, i+1)
     hour_subset <- i
     
-    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW4 + poly(wind_speed_mean, 2) +
+    model_h[[i+1]] <- train(Price ~ Price_l24 + DoW4 + poly(wind_speed_mean, 2, raw = TRUE) +
                               wind_speed_sd,
                             data = filter(price, Hour %in% hour_subset),
                             method="lm",
@@ -235,7 +286,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     #hour_subset <- c(i-1, i, i+1)
     hour_subset <- i
     
-    model_h[[i+1]] <- train(Price ~ Price_l168 + DoW4 + poly(wind_speed_mean, 2) +
+    model_h[[i+1]] <- train(Price ~ Price_l24 + DoW4 + poly(wind_speed_mean, 2, raw = TRUE) +
                               wind_speed_sd,
                             data = filter(price, Hour %in% hour_subset),
                             method="lm",
