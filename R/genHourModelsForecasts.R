@@ -20,7 +20,7 @@ require(lubridate)
 require(caret)
 require(splines)
 
-subDate <- ymd("2016-04-10", tz="UTC")
+subDate <- ymd("2016-04-11", tz="UTC")
 
 #### Run model with latest data ===============================================
 source("./R/testModels_HourModels_adjHrs.R")
