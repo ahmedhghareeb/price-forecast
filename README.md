@@ -19,3 +19,5 @@ This code is for the COMPLATT SmartWatt electricity price forecasting competitio
 9/4/2016 - Started using genHourModelsForecasts_1day.R for one day ahead forecasts and old script for days 2 to 5.
 
 10/4/2016 - As above
+
+11/4/2016 - As above
