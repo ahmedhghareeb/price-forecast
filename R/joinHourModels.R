@@ -26,11 +26,11 @@ outputForecasts5day <- outputForecasts %>%
 
 load(paste0("./cache/1_day_", filename, ".RData"))
 
-ggplot() + 
-  geom_line(data=outputForecasts5day, aes(x=1:120, y=value), 
-            colour="blue") + 
-  geom_line(data=outputForecasts, aes(x=1:24, y=value), 
-            colour="red")
+# ggplot() +
+#   geom_line(data=outputForecasts5day, aes(x=1:120, y=value),
+#             colour="blue") +
+#   geom_line(data=outputForecasts1day, aes(x=1:24, y=value),
+#             colour="red")
 
 outputForecasts <- bind_rows(outputForecasts, outputForecasts5day)
 
