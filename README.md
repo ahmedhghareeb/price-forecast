@@ -21,3 +21,7 @@ This code is for the COMPLATT SmartWatt electricity price forecasting competitio
 10/4/2016 - As above
 
 11/4/2016 - As above
+
+12/4/2016 - As above
+
+13/4/2016 - Fixed up one day forecast to use better DoW variables. Now using DoW5. In the 5 day forecast script, switched the training day for weather data forecasts from day 4 (produced smallest MAE for 5 day horizon). Really should train a separate model for each forecast day, but not enough time today. Will do tomorrow.

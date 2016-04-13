@@ -20,7 +20,7 @@ require(lubridate)
 require(caret)
 require(splines)
 
-subDate <- ymd("2016-04-12", tz="UTC")
+subDate <- ymd("2016-04-13", tz="UTC")
 n_data <- "All"
 
 #### Run model with latest data ===============================================
