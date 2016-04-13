@@ -136,7 +136,8 @@ weather <- weather %>%
     DoW2 = ifelse(Weekend == TRUE, DoW, "Weekday"),
     DoW3 = ifelse(Holiday == TRUE, "Holiday", DoW2),
     DoW4 = ifelse(Weekend == TRUE, "Weekend",
-                  ifelse(Holiday == TRUE, "Holiday", "Weekday"))
+                  ifelse(Holiday == TRUE, "Holiday", "Weekday")),
+    DoW5 = ifelse(DoW %in% c("Sat", "Sun", "Mon"), DoW, "OtherWeekday")
   )
 
 # Add hourly lags for weather variables

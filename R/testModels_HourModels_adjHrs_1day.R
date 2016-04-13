@@ -144,7 +144,8 @@ genHourPriceModel <- function(subDate, n_data = "All") {
       DoW2 = ifelse(Weekend == TRUE, DoW, "Weekday"),
       DoW3 = ifelse(Holiday == TRUE, "Holiday", DoW2),
       DoW4 = ifelse(Weekend == TRUE, "Weekend",
-                    ifelse(Holiday == TRUE, "Holiday", "Weekday"))
+                    ifelse(Holiday == TRUE, "Holiday", "Weekday")),
+      DoW5 = ifelse(DoW %in% c("Sat", "Sun", "Mon"), DoW, "OtherWeekday")
     )
   
   # Add hourly lags for weather variables
@@ -245,7 +246,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     hour_subset[hour_subset==-1] <- 23
     hour_subset[hour_subset==24] <- 0
     
-    model_h[[i+1]] <- train(Price ~ Price_l24 + DoW4 + poly(wind_speed_mean, 2, raw = TRUE) +
+    model_h[[i+1]] <- train(Price ~ Price_l24 + DoW5 + Holiday + poly(wind_speed_mean, 2, raw = TRUE) +
                               temperature_sd,
                             data = filter(price, Hour %in% hour_subset),
                             method="lm",
@@ -263,7 +264,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     
     hour_subset <- c(i-1, i, i+1)
     
-    model_h[[i+1]] <- train(Price ~ Price_l24 + DoW4 + poly(wind_speed_mean, 2, raw = TRUE) +
+    model_h[[i+1]] <- train(Price ~ Price_l24 + DoW5 + Holiday + poly(wind_speed_mean, 2, raw = TRUE) +
                               wind_speed_sd,
                             data = filter(price, Hour %in% hour_subset),
                             method="lm",
@@ -281,7 +282,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
     
     hour_subset <- c(i-1, i, i+1)
     
-    model_h[[i+1]] <- train(Price ~ Price_l24 + DoW4 + poly(wind_speed_mean, 2, raw = TRUE) +
+    model_h[[i+1]] <- train(Price ~ Price_l24 + DoW5 + Holiday + poly(wind_speed_mean, 2, raw = TRUE) +
                               wind_speed_sd,
                             data = filter(price, Hour %in% hour_subset),
                             method="lm",
