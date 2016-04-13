@@ -27,7 +27,7 @@ maeSummary <- function (data,
 }
 
 #### Load data ================================================================
-genHourPriceModel <- function(subDate, n_data = "All") {
+genHourPriceModel <- function(subDate, n_data = "All", weatherDay = 1) {
   dataStart <- ymd("2016-02-12", tz="UTC")
   if(n_data == "All") {
     n_data <- round(as.numeric(subDate - dataStart))
@@ -46,7 +46,7 @@ genHourPriceModel <- function(subDate, n_data = "All") {
       mutate(available_date = ymd_hms(available_date, tz="UTC"),
              prediction_date = ymd_hms(prediction_date, tz="UTC")) %>% 
       rename(ts = prediction_date) %>% 
-      filter(floor_date(ts, "day") == weatherDate + days(1)) %>% 
+      filter(floor_date(ts, "day") == weatherDate + days(weatherDay)) %>% 
       select(-available_date)
     
     weather <- bind_rows(weather, weather_tmp)

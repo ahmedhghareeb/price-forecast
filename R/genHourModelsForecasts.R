@@ -22,10 +22,11 @@ require(splines)
 
 subDate <- ymd("2016-04-12", tz="UTC")
 n_data <- "All"
+weatherDay <- 4
 
 #### Run model with latest data ===============================================
 source("./R/testModels_HourModels_adjHrs.R")
-finalModel <- genHourPriceModel(subDate, n_data)
+finalModel <- genHourPriceModel(subDate, n_data, weatherDay)
 
 #### Load data ================================================================
 # Load yesterday's weather forecast to get hours 23 and 24 for submission date.
