@@ -11,7 +11,7 @@ source("./R/genHourModelsForecasts_1day.R")
 
 rm(list=ls())
 
-subDate <- ymd("2016-04-13", tz="UTC")
+subDate <- ymd("2016-04-15", tz="UTC")
 
 
 
@@ -48,7 +48,7 @@ if (FALSE) {
     select(ts, predictions = value)
   
   pricesFuture <- NULL
-  n_days_future <- 3
+  n_days_future <- 5
   for(i in -n_days_future:0) {
     priceDate = subDate-days(i)
     priceFileName <- paste0("INT_PBC_EV_H_1_",

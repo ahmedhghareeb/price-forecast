@@ -25,3 +25,9 @@ This code is for the COMPLATT SmartWatt electricity price forecasting competitio
 12/4/2016 - As above
 
 13/4/2016 - Fixed up one day forecast to use better DoW variables. Now using DoW5. In the 5 day forecast script, switched the training day for weather data forecasts from day 4 (produced smallest MAE for 5 day horizon). Really should train a separate model for each forecast day, but not enough time today. Will do tomorrow.
+
+14/4/2016 - now training separate models for days 2, 3, 4 and 5 based on weather forecasts for those days. Doesn't seem to make too much of a difference to MAE results. It seems as though the D+5 model trained on D+1 data sometimes performs better, but it's likely that it can be way out if the weather forecast is way out. Hence, I still suspect training the D+5 model on D+5 data is better, as it stops really bad prediction days from happening.
+
+CV should probably be shifted to a 1 day horizon.
+
+15/4/2016 - As above, but fixed a bug in the genHourModelsForecasts.R script. Day 5 was using day 4 model due to a typo.
