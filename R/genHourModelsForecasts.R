@@ -22,11 +22,19 @@ require(splines)
 
 subDate <- ymd("2016-04-13", tz="UTC")
 n_data <- "All"
-weatherDay <- 4
 
 #### Run model with latest data ===============================================
 source("./R/testModels_HourModels_adjHrs.R")
-finalModel <- genHourPriceModel(subDate, n_data, weatherDay)
+
+# A separate model is trained for each day of the weather forecast. This is to
+# make sure that training data and forecast input data are the same. We
+# shouldn't train a model on D+1 weather data and then use it to predict price
+# using D+5 weather. D+5 weather will be much less reliable which will affect
+# model coefficients.
+finalModel2 <- genHourPriceModel(subDate, n_data, 2)
+finalModel3 <- genHourPriceModel(subDate, n_data, 3)
+finalModel4 <- genHourPriceModel(subDate, n_data, 4)
+finalModel5 <- genHourPriceModel(subDate, n_data, 5)
 
 #### Load data ================================================================
 # Load yesterday's weather forecast to get hours 23 and 24 for submission date.
@@ -159,14 +167,57 @@ weather <- inner_join(weather, pricesLagged)
 
 #### Predict forecasts ========================================================
 price_pred <- NULL
+#D+2 forecast (and D+1 for first couple of hours)
 for (i in 0:23) {
-  predictions <- predict(finalModel[[i+1]], newdata = filter(weather, Hour==i))
-  price_tmp <- weather %>% 
-    filter(Hour==i) %>% 
+  data_filtered <- filter(weather, Hour==i,
+                          ts <= subDate+days(3) - hours(1))
+  predictions <- predict(finalModel2[[i+1]], 
+                         newdata = data_filtered)
+  price_tmp <- data_filtered %>% 
     mutate(predictions = predictions)
   
   price_pred <- bind_rows(price_pred, price_tmp)
 }
+
+#D+3 forecast
+for (i in 0:23) {
+  data_filtered <- filter(weather, Hour==i,
+                          between(ts, subDate+days(3),
+                                  subDate+days(4) - hours(1)))
+  predictions <- predict(finalModel3[[i+1]], 
+                         newdata = data_filtered)
+  price_tmp <- data_filtered %>% 
+    mutate(predictions = predictions)
+  
+  price_pred <- bind_rows(price_pred, price_tmp)
+}
+
+#D+4 forecast
+for (i in 0:23) {
+  data_filtered <- filter(weather, Hour==i,
+                          between(ts, subDate+days(4),
+                                  subDate+days(5) - hours(1)))
+  predictions <- predict(finalModel4[[i+1]], 
+                         newdata = data_filtered)
+  price_tmp <- data_filtered %>% 
+    mutate(predictions = predictions)
+  
+  price_pred <- bind_rows(price_pred, price_tmp)
+}
+
+#D+5 forecast
+for (i in 0:23) {
+  data_filtered <- filter(weather, Hour==i,
+                          between(ts, subDate+days(5),
+                                  subDate+days(6) - hours(1)))
+  predictions <- predict(finalModel5[[i+1]], 
+                         newdata = data_filtered)
+  price_tmp <- data_filtered %>% 
+    mutate(predictions = predictions)
+  
+  price_pred <- bind_rows(price_pred, price_tmp)
+}
+
 price_pred <- price_pred %>% 
   arrange(ts)
 
