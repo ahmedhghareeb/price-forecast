@@ -11,7 +11,7 @@ source("./R/genHourModelsForecasts_1day.R")
 
 rm(list=ls())
 
-subDate <- ymd("2016-04-15", tz="UTC")
+subDate <- ymd("2016-04-16", tz="UTC")
 
 
 
