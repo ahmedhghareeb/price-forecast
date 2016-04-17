@@ -31,3 +31,7 @@ This code is for the COMPLATT SmartWatt electricity price forecasting competitio
 CV should probably be shifted to a 1 day horizon.
 
 15/4/2016 - As above, but fixed a bug in the genHourModelsForecasts.R script. Day 5 was using day 4 model due to a typo.
+
+16/4/2016 - As above
+
+17/4/2016 - As above. Done!!!!
