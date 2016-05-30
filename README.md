@@ -38,4 +38,4 @@ CV should probably be shifted to a 1 day horizon.
 
 ## Result
 
-Came 20^th^. 200 teams registered, 80 competed and 60 finished. So ok result but nothing impressive. Next time I'll feel justified using more advanced techniques! Xgboost here I come!
+Came 20<sup>th</sup>. 200 teams registered, 80 competed and 60 finished. So ok result but nothing impressive. Next time I'll feel justified using more advanced techniques! Xgboost here I come!
