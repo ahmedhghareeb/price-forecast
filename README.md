@@ -35,3 +35,7 @@ CV should probably be shifted to a 1 day horizon.
 16/4/2016 - As above
 
 17/4/2016 - As above. Done!!!!
+
+## Result
+
+Came 20^th^. 200 teams registered, 80 competed and 60 finished. So ok result but nothing impressive. Next time I'll feel justified using more advanced techniques! Xgboost here I come!
